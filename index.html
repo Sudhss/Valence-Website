@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valence — Code Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #000000;
+    --bg2: #0a0a0a;
+    --bg3: #111111;
+    --bg4: #1a1a1a;
+    --surface: rgba(255,255,255,0.04);
+    --surface2: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f5f5f7;
+    --text2: rgba(245,245,247,0.6);
+    --text3: rgba(245,245,247,0.35);
+    --accent: #2997ff;
+    --accent2: #30d158;
+    --accent3: #ff453a;
+    --accent4: #ffd60a;
+    --mono: 'JetBrains Mono', monospace;
+    --serif: 'Instrument Serif', serif;
+    --sans: 'DM Sans', -apple-system, sans-serif;
+    --r: 18px;
+    --r2: 24px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px;
+    height: 56px;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-logo {
+    font-family: var(--serif);
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .nav-links {
+    display: flex; gap: 36px; list-style: none;
+  }
+  .nav-links a {
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    background: var(--accent);
+    color: #fff !important;
+    padding: 6px 18px;
+    border-radius: 980px;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    transition: opacity 0.2s !important;
+  }
+  .nav-cta:hover { opacity: 0.85; color: #fff !important; }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(41,151,255,0.18) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 40% at 80% 80%, rgba(48,209,88,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 20% 70%, rgba(255,69,58,0.05) 0%, transparent 60%);
+  }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(41,151,255,0.1);
+    border: 0.5px solid rgba(41,151,255,0.25);
+    border-radius: 980px;
+    padding: 5px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.8s ease both;
+  }
+  .eyebrow-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(64px, 9vw, 120px);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 8px;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.8s ease 0.1s both;
+  }
+  .hero-title em {
+    font-style: italic;
+    color: var(--text2);
+  }
+
+  .hero-sub {
+    font-size: clamp(18px, 2.5vw, 24px);
+    color: var(--text2);
+    max-width: 560px;
+    font-weight: 300;
+    line-height: 1.5;
+    margin-top: 28px;
+    margin-bottom: 48px;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.8s ease 0.2s both;
+  }
+
+  .hero-actions {
+    display: flex; gap: 14px; align-items: center;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.8s ease 0.3s both;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 980px;
+    font-size: 17px;
+    font-weight: 400;
+    font-family: var(--sans);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { background: #1a86ef; transform: scale(1.02); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--accent);
+    border: none;
+    padding: 14px 24px;
+    border-radius: 980px;
+    font-size: 17px;
+    font-weight: 400;
+    font-family: var(--sans);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { background: rgba(41,151,255,0.08); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── EDITOR PREVIEW ── */
+  .editor-preview-wrap {
+    width: 100%; max-width: 1000px;
+    margin: 72px auto 0;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.9s ease 0.5s both;
+  }
+
+  .editor-glow {
+    position: absolute;
+    inset: -60px;
+    background: radial-gradient(ellipse at 50% 40%, rgba(41,151,255,0.12), transparent 70%);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .editor-chrome {
+    background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--r2);
+    overflow: hidden;
+    box-shadow:
+      0 0 0 0.5px rgba(255,255,255,0.05),
+      0 32px 80px rgba(0,0,0,0.6),
+      0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .editor-titlebar {
+    background: rgba(255,255,255,0.03);
+    border-bottom: 0.5px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .traffic-lights { display: flex; gap: 8px; }
+  .tl {
+    width: 12px; height: 12px; border-radius: 50%;
+  }
+  .tl-r { background: #ff5f57; }
+  .tl-y { background: #febc2e; }
+  .tl-g { background: #28c840; }
+  .editor-filename {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    margin-left: 4px;
+  }
+
+  .editor-body {
+    display: flex;
+    height: 380px;
+    overflow: hidden;
+  }
+
+  .line-numbers {
+    padding: 20px 0;
+    width: 52px;
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text3);
+    background: rgba(0,0,0,0.2);
+    border-right: 0.5px solid var(--border);
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .line-numbers span { display: block; padding-right: 16px; }
+  .line-numbers span.active { color: var(--text2); }
+
+  .code-area {
+    flex: 1;
+    padding: 20px 28px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.7;
+    overflow: auto;
+    position: relative;
+  }
+
+  .code-line { display: flex; align-items: center; white-space: pre; }
+  .code-line.cursor-line { background: rgba(255,255,255,0.03); border-radius: 3px; }
+
+  .cursor {
+    display: inline-block;
+    width: 2px; height: 16px;
+    background: var(--accent);
+    border-radius: 1px;
+    margin-left: 1px;
+    animation: blink 1.2s ease-in-out infinite;
+    vertical-align: middle;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* syntax colors */
+  .kw  { color: #fc5fa3; }
+  .kw2 { color: #fc5fa3; }
+  .ty  { color: #5dd8ff; }
+  .fn  { color: #67b7a4; }
+  .st  { color: #fc6a5d; }
+  .cm  { color: rgba(245,245,247,0.3); font-style: italic; }
+  .nu  { color: #d0bf69; }
+  .pu  { color: var(--text2); }
+  .nm  { color: #cda869; }
+
+  /* ── SECTION COMMON ── */
+  section { padding: 120px 24px; }
+  .section-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: var(--serif);
+    font-size: clamp(40px, 5vw, 64px);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+  .section-title em { font-style: italic; color: var(--text2); }
+  .section-body {
+    font-size: 19px;
+    color: var(--text2);
+    line-height: 1.6;
+    font-weight: 300;
+    max-width: 520px;
+  }
+
+  /* ── FEATURE STRIP ── */
+  #features {
+    background: var(--bg2);
+    border-top: 0.5px solid var(--border);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .features-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 0.5px solid var(--border);
+    border-radius: var(--r2);
+    overflow: hidden;
+  }
+  .feature-card {
+    background: var(--bg2);
+    padding: 40px 36px;
+    transition: background 0.2s;
+  }
+  .feature-card:hover { background: var(--bg3); }
+  .feature-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--surface2);
+    border: 0.5px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+    font-size: 20px;
+  }
+  .feature-card h3 {
+    font-size: 19px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+  }
+  .feature-card p {
+    font-size: 15px;
+    color: var(--text2);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* ── ARCH SECTION ── */
+  #architecture {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+  }
+  .arch-cards { display: flex; flex-direction: column; gap: 12px; }
+  .arch-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 20px 24px;
+    display: flex; align-items: flex-start; gap: 16px;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: default;
+  }
+  .arch-card:hover {
+    background: var(--surface2);
+    border-color: var(--border2);
+  }
+  .arch-card-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 500;
+  }
+  .arch-card h4 {
+    font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .arch-card p { font-size: 13px; color: var(--text2); line-height: 1.5; font-weight: 300; }
+  .arch-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    background: rgba(48,209,88,0.08);
+    border: 0.5px solid rgba(48,209,88,0.2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-top: 6px;
+  }
+
+  /* ── TIMELINE ── */
+  #timeline-section { background: var(--bg2); border-top: 0.5px solid var(--border); }
+  .timeline-inner { max-width: 1100px; margin: 0 auto; }
+  .timeline-header { text-align: center; margin-bottom: 72px; }
+  .timeline-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+  .timeline-item {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 28px 24px;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    cursor: default;
+  }
+  .timeline-item:hover {
+    background: var(--surface2);
+    border-color: var(--border2);
+    transform: translateY(-3px);
+  }
+  .timeline-week {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+  .timeline-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .timeline-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+  .timeline-num {
+    position: absolute; top: 24px; right: 20px;
+    font-family: var(--serif);
+    font-size: 36px;
+    color: rgba(255,255,255,0.04);
+    line-height: 1;
+    user-select: none;
+  }
+  .timeline-item:nth-child(1) { border-top: 1.5px solid rgba(48,209,88,0.5); }
+  .timeline-item:nth-child(2) { border-top: 1.5px solid rgba(41,151,255,0.5); }
+  .timeline-item:nth-child(3) { border-top: 1.5px solid rgba(175,82,222,0.5); }
+  .timeline-item:nth-child(4) { border-top: 1.5px solid rgba(255,214,10,0.5); }
+  .timeline-item:nth-child(5) { border-top: 1.5px solid rgba(255,69,58,0.5); }
+
+  /* ── TECH SECTION ── */
+  #tech { max-width: 1100px; margin: 0 auto; }
+  .tech-split { display: grid; grid-template-columns: 1fr 1.2fr; gap: 80px; align-items: start; }
+  .tech-code-block {
+    background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--r);
+    overflow: hidden;
+  }
+  .code-block-header {
+    background: rgba(255,255,255,0.03);
+    border-bottom: 0.5px solid var(--border);
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .code-block-lang {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .code-block-copy {
+    font-size: 11px; color: var(--text3);
+    cursor: pointer;
+    transition: color 0.2s;
+    background: none; border: none; font-family: var(--sans);
+    padding: 0;
+  }
+  .code-block-copy:hover { color: var(--text2); }
+  .code-block-body {
+    padding: 24px 24px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.75;
+    overflow-x: auto;
+  }
+  .tech-list { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+  .tech-list li {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--r);
+    transition: border-color 0.2s;
+  }
+  .tech-list li:hover { border-color: var(--border2); }
+  .tech-bullet {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 6px;
+  }
+  .tech-list li h5 { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .tech-list li p  { font-size: 13px; color: var(--text2); font-weight: 300; line-height: 1.5; }
+
+  /* ── SPEC BAR ── */
+  .spec-bar {
+    background: var(--bg2);
+    border-top: 0.5px solid var(--border);
+    border-bottom: 0.5px solid var(--border);
+    padding: 40px 48px;
+  }
+  .spec-bar-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; justify-content: space-around; align-items: center;
+    flex-wrap: wrap; gap: 32px;
+  }
+  .spec-item { text-align: center; }
+  .spec-num {
+    font-family: var(--serif);
+    font-size: 48px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--text);
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+  }
+  .spec-num span { color: var(--accent); }
+  .spec-label { font-size: 13px; color: var(--text2); font-weight: 300; }
+  .spec-divider {
+    width: 0.5px; height: 60px;
+    background: var(--border2);
+  }
+
+  /* ── CTA ── */
+  #cta {
+    text-align: center;
+    padding: 140px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(41,151,255,0.12), transparent 70%);
+  }
+  #cta > * { position: relative; z-index: 1; }
+  .cta-title {
+    font-family: var(--serif);
+    font-size: clamp(48px, 7vw, 96px);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+  .cta-title em { font-style: italic; color: var(--text2); }
+  .cta-sub { font-size: 19px; color: var(--text2); max-width: 460px; margin: 0 auto 48px; font-weight: 300; }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 0.5px solid var(--border);
+    padding: 40px 48px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 16px;
+  }
+  .footer-logo { font-family: var(--serif); font-size: 17px; color: var(--text2); }
+  .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+  .footer-links a { font-size: 13px; color: var(--text3); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--text2); }
+  .footer-copy { font-size: 12px; color: var(--text3); }
+
+  /* ── SCROLL REVEAL ── */
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-d1 { transition-delay: 0.1s; }
+  .reveal-d2 { transition-delay: 0.2s; }
+  .reveal-d3 { transition-delay: 0.3s; }
+  .reveal-d4 { transition-delay: 0.4s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    nav { padding: 0 24px; }
+    .nav-links { display: none; }
+    #architecture { grid-template-columns: 1fr; gap: 48px; }
+    .timeline-grid { grid-template-columns: 1fr 1fr; }
+    .tech-split { grid-template-columns: 1fr; gap: 40px; }
+    .features-inner { grid-template-columns: 1fr; }
+    .spec-divider { display: none; }
+    footer { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 600px) {
+    .timeline-grid { grid-template-columns: 1fr; }
+    .hero-actions { flex-direction: column; width: 100%; }
+    .btn-primary, .btn-ghost { width: 100%; justify-content: center; }
+    section { padding: 80px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Valence</a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#timeline-section">Roadmap</a></li>
+    <li><a href="https://github.com" target="_blank">GitHub</a></li>
+    <li><a href="#cta" class="nav-cta">Download</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+
+  <div class="hero-eyebrow">
+    <span class="eyebrow-dot"></span>
+    Built from scratch &nbsp;·&nbsp; C++ &amp; Qt
+  </div>
+
+  <h1 class="hero-title">
+    Write code<br><em>at the speed</em><br>of thought.
+  </h1>
+
+  <p class="hero-sub">
+    A minimal, blazing-fast code editor built entirely from scratch in C++ and Qt.
+    No Electron. No bloat. Just pure engineering.
+  </p>
+
+  <div class="hero-actions">
+    <a href="#" class="btn-primary">
+      Download for macOS
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 2v8M4 7l4 4 4-4M2 14h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <a href="https://github.com" target="_blank" class="btn-ghost">View source →</a>
+  </div>
+
+  <!-- EDITOR MOCKUP -->
+  <div class="editor-preview-wrap">
+    <div class="editor-glow"></div>
+    <div class="editor-chrome">
+      <div class="editor-titlebar">
+        <div class="traffic-lights">
+          <div class="tl tl-r"></div>
+          <div class="tl tl-y"></div>
+          <div class="tl tl-g"></div>
+        </div>
+        <span class="editor-filename">main.cpp — Valence</span>
+      </div>
+      <div class="editor-body">
+        <div class="line-numbers" id="line-nums"></div>
+        <div class="code-area" id="code-area"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPEC BAR -->
+<div class="spec-bar">
+  <div class="spec-bar-inner">
+    <div class="spec-item reveal">
+      <div class="spec-num">0<span>ms</span></div>
+      <div class="spec-label">startup time</div>
+    </div>
+    <div class="spec-divider reveal reveal-d1"></div>
+    <div class="spec-item reveal reveal-d1">
+      <div class="spec-num">~<span>2k</span></div>
+      <div class="spec-label">lines of C++</div>
+    </div>
+    <div class="spec-divider reveal reveal-d2"></div>
+    <div class="spec-item reveal reveal-d2">
+      <div class="spec-num">0<span></span></div>
+      <div class="spec-label">dependencies</div>
+    </div>
+    <div class="spec-divider reveal reveal-d3"></div>
+    <div class="spec-item reveal reveal-d3">
+      <div class="spec-num">60<span>fps</span></div>
+      <div class="spec-label">render loop</div>
+    </div>
+    <div class="spec-divider reveal reveal-d4"></div>
+    <div class="spec-item reveal reveal-d4">
+      <div class="spec-num">5<span>wks</span></div>
+      <div class="spec-label">built in</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div style="max-width:1100px;margin:0 auto;text-align:center;margin-bottom:64px" class="reveal">
+    <p class="section-label">Core features</p>
+    <h2 class="section-title" style="max-width:600px;margin:0 auto">Built the right way,<br><em>from the ground up.</em></h2>
+  </div>
+  <div class="features-inner">
+    <div class="feature-card reveal">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 2v6l3 3-3 3v4"/><path d="M6 6l-3 4 3 4"/><path d="M14 6l3 4-3 4"/>
+        </svg>
+      </div>
+      <h3>Zero-overhead rendering</h3>
+      <p>Custom QPainter loop draws only visible lines. No layout engine. No DOM. Sub-millisecond frame times even on large files.</p>
+    </div>
+    <div class="feature-card reveal reveal-d1">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="9" width="4" height="8" rx="1"/><rect x="8" y="5" width="4" height="12" rx="1"/><rect x="13" y="2" width="4" height="15" rx="1"/>
+        </svg>
+      </div>
+      <h3>Logical cursor model</h3>
+      <p>Cursor tracked as (row, col) and converted to pixels only at paint time. Eliminating an entire class of rendering bugs.</p>
+    </div>
+    <div class="feature-card reveal reveal-d2">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h4M3 10h8M3 14h5"/><circle cx="14" cy="10" r="4"/><path d="M12.5 10h3M14 8.5v3"/>
+        </svg>
+      </div>
+      <h3>C++ syntax highlighting</h3>
+      <p>Hand-written tokenizer with no regex overhead. Identifies keywords, types, strings, and comments in a single O(n) pass.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h12a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M3 8h14"/><path d="M7 4v4"/>
+        </svg>
+      </div>
+      <h3>Native file I/O</h3>
+      <p>Open and save any file instantly with Qt's native file dialogs. Reads directly into the line buffer — no intermediate copies.</p>
+    </div>
+    <div class="feature-card reveal reveal-d1">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="5" x2="16" y2="5"/><line x1="4" y1="9" x2="16" y2="9"/><line x1="4" y1="13" x2="16" y2="13"/><line x1="4" y1="17" x2="10" y2="17"/>
+        </svg>
+      </div>
+      <h3>Line number gutter</h3>
+      <p>Rendered with a fixed 50px offset. Current line highlighted. Gutter background separated with a subtle 0.5px border.</p>
+    </div>
+    <div class="feature-card reveal reveal-d2">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5h8"/><path d="M4 9h12"/><path d="M4 13h12"/><path d="M7 5v4"/>
+        </svg>
+      </div>
+      <h3>Smart auto-indent</h3>
+      <p>On Enter, the editor copies the leading whitespace from the current line. Keeps your indentation intact across the session.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section>
+  <div id="architecture">
+    <div class="reveal">
+      <p class="section-label">Architecture</p>
+      <h2 class="section-title">Five clean<br><em>subsystems.</em></h2>
+      <p class="section-body">
+        Each layer has a single responsibility. The buffer owns the data. The renderer owns the pixels. They never talk directly — only through the cursor.
+      </p>
+    </div>
+    <div class="arch-cards">
+      <div class="arch-card reveal">
+        <div class="arch-card-icon">buf</div>
+        <div>
+          <h4>Text Buffer</h4>
+          <p>std::vector&lt;std::string&gt; — one string per line. Insert, delete, split, merge.</p>
+          <span class="arch-tag">O(1) line access</span>
+        </div>
+      </div>
+      <div class="arch-card reveal reveal-d1">
+        <div class="arch-card-icon">cur</div>
+        <div>
+          <h4>Cursor System</h4>
+          <p>Struct { int row; int col }. Logical position only — pixels are derived, never stored.</p>
+          <span class="arch-tag">decoupled from render</span>
+        </div>
+      </div>
+      <div class="arch-card reveal reveal-d2">
+        <div class="arch-card-icon">rnd</div>
+        <div>
+          <h4>Rendering Engine</h4>
+          <p>QPainter in paintEvent. Draws only the visible viewport window, token by token.</p>
+          <span class="arch-tag">viewport culling</span>
+        </div>
+      </div>
+      <div class="arch-card reveal reveal-d3">
+        <div class="arch-card-icon">inp</div>
+        <div>
+          <h4>Input Handler</h4>
+          <p>keyPressEvent routes chars to buffer, arrows to cursor, and calls update() once per event.</p>
+          <span class="arch-tag">single repaint/event</span>
+        </div>
+      </div>
+      <div class="arch-card reveal reveal-d4">
+        <div class="arch-card-icon">lex</div>
+        <div>
+          <h4>Tokenizer</h4>
+          <p>Single-pass lexer classifies tokens into keyword, type, string, comment, or plain text.</p>
+          <span class="arch-tag">O(n) per line</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline-section">
+  <div class="timeline-inner">
+    <div class="timeline-header reveal">
+      <p class="section-label">Build roadmap</p>
+      <h2 class="section-title">Five weekends.<br><em>One editor.</em></h2>
+    </div>
+    <div class="timeline-grid">
+      <div class="timeline-item reveal">
+        <span class="timeline-num">1</span>
+        <div class="timeline-week">Weekend 1</div>
+        <div class="timeline-name">Foundation</div>
+        <div class="timeline-desc">TextBuffer class. Qt project skeleton. Static text renders to screen via QPainter.</div>
+      </div>
+      <div class="timeline-item reveal reveal-d1">
+        <span class="timeline-num">2</span>
+        <div class="timeline-week">Weekend 2</div>
+        <div class="timeline-name">The Typewriter</div>
+        <div class="timeline-desc">Cursor renders and blinks. Type characters, move left/right, backspace on a single line.</div>
+      </div>
+      <div class="timeline-item reveal reveal-d2">
+        <span class="timeline-num">3</span>
+        <div class="timeline-week">Weekend 3</div>
+        <div class="timeline-name">Full Navigation</div>
+        <div class="timeline-desc">Multi-line editing, Enter splits lines, Backspace merges. Viewport scrolling with wheelEvent.</div>
+      </div>
+      <div class="timeline-item reveal reveal-d3">
+        <span class="timeline-num">4</span>
+        <div class="timeline-week">Weekend 4</div>
+        <div class="timeline-name">File I/O &amp; Syntax</div>
+        <div class="timeline-desc">Open and save real .cpp files. Tokenizer colors keywords, strings, and comments.</div>
+      </div>
+      <div class="timeline-item reveal reveal-d4">
+        <span class="timeline-num">5</span>
+        <div class="timeline-week">Weekend 5</div>
+        <div class="timeline-name">Polish &amp; MVP</div>
+        <div class="timeline-desc">Line number gutter. Auto-indent. Edge case fixes. Resume-ready MVP ships.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH -->
+<section>
+  <div id="tech">
+    <div class="tech-split">
+      <div class="reveal">
+        <p class="section-label">Tech decisions</p>
+        <h2 class="section-title">Why every<br><em>choice matters.</em></h2>
+        <ul class="tech-list" style="margin-top:36px">
+          <li class="reveal">
+            <div class="tech-bullet" style="background:#30d158"></div>
+            <div>
+              <h5>Array of Lines over Rope</h5>
+              <p>Rope trees are powerful but overkill. For files under 20k lines, vector&lt;string&gt; is faster to implement and reason about — and finishes in the time budget.</p>
+            </div>
+          </li>
+          <li class="reveal reveal-d1">
+            <div class="tech-bullet" style="background:#2997ff"></div>
+            <div>
+              <h5>Logical cursor, not pixel cursor</h5>
+              <p>Tracking cursor in (row, col) and converting to pixels at render time eliminates an entire class of drift bugs when the font changes or the viewport scrolls.</p>
+            </div>
+          </li>
+          <li class="reveal reveal-d2">
+            <div class="tech-bullet" style="background:#af52de"></div>
+            <div>
+              <h5>Viewport culling from day one</h5>
+              <p>Only draw lines between startRow and endRow based on scrollY. A 10,000-line file runs at the same FPS as a 10-line file.</p>
+            </div>
+          </li>
+          <li class="reveal reveal-d3">
+            <div class="tech-bullet" style="background:#ffd60a"></div>
+            <div>
+              <h5>Monospace font enforced at init</h5>
+              <p>QFont initialized with a fixed monospace font at startup. Variable-width fonts break all cursor math — this constraint is non-negotiable.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="reveal reveal-d1">
+        <div class="tech-code-block">
+          <div class="code-block-header">
+            <span class="code-block-lang">TextBuffer.cpp</span>
+            <button class="code-block-copy" onclick="copyCode(this)">copy</button>
+          </div>
+          <div class="code-block-body">
+<span class="kw">void</span> <span class="fn">TextBuffer::insertChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col, <span class="ty">char</span> ch) {
+  lines[row].insert(col, <span class="nu">1</span>, ch);
+}
+
+<span class="kw">void</span> <span class="fn">TextBuffer::deleteChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col) {
+  <span class="kw">if</span> (col == <span class="nu">0</span>) {
+    mergeLines(row);
+    <span class="kw">return</span>;
+  }
+  lines[row].erase(col - <span class="nu">1</span>, <span class="nu">1</span>);
+}
+
+<span class="kw">void</span> <span class="fn">TextBuffer::splitLine</span>(<span class="ty">int</span> row, <span class="ty">int</span> col) {
+  <span class="ty">std::string</span> tail = lines[row].substr(col);
+  lines[row]  = lines[row].substr(<span class="nu">0</span>, col);
+  lines.insert(lines.begin() + row + <span class="nu">1</span>, tail);
+}
+
+<span class="kw">void</span> <span class="fn">TextBuffer::mergeLines</span>(<span class="ty">int</span> row) {
+  <span class="kw">if</span> (row == <span class="nu">0</span>) <span class="kw">return</span>;
+  lines[row-<span class="nu">1</span>] += lines[row];
+  lines.erase(lines.begin() + row);
+}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-bg"></div>
+  <p class="section-label" style="margin-bottom:20px">Open source</p>
+  <h2 class="cta-title">Built in the open.<br><em>Free forever.</em></h2>
+  <p class="cta-sub">Clone the repo, study the code, build on it. Valence is a proof that systems software doesn't need frameworks.</p>
+  <div class="hero-actions" style="justify-content:center">
+    <a href="https://github.com" target="_blank" class="btn-primary">
+      View on GitHub
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 1C4.134 1 1 4.134 1 8c0 3.09 2.006 5.713 4.788 6.635.35.064.479-.152.479-.337 0-.166-.006-.604-.01-1.187-1.947.423-2.358-.94-2.358-.94-.318-.809-.777-1.024-.777-1.024-.636-.434.048-.425.048-.425.703.05 1.073.722 1.073.722.624 1.07 1.638.761 2.037.582.064-.452.244-.761.444-.936-1.554-.177-3.188-.777-3.188-3.456 0-.763.273-1.388.72-1.877-.072-.177-.312-.888.068-1.85 0 0 .586-.188 1.921.716A6.7 6.7 0 018 4.979a6.7 6.7 0 011.751.236c1.334-.904 1.92-.716 1.92-.716.38.962.14 1.673.069 1.85.448.489.72 1.114.72 1.877 0 2.686-1.637 3.277-3.196 3.45.251.217.474.645.474 1.3 0 .937-.009 1.692-.009 1.922 0 .187.127.405.482.336C12.996 13.71 15 11.088 15 8c0-3.866-3.134-7-7-7z" fill="currentColor"/>
+      </svg>
+    </a>
+    <a href="#" class="btn-ghost">Download binary →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">Valence</span>
+  <div class="footer-links">
+    <a href="https://github.com" target="_blank">GitHub</a>
+    <a href="#">Docs</a>
+    <a href="#">Changelog</a>
+    <a href="#">License</a>
+  </div>
+  <span class="footer-copy">Built from scratch in C++ &amp; Qt</span>
+</footer>
+
+<script>
+/* ── Code syntax in editor mockup ── */
+const lines = [
+  `<span class="cm">// Valence — text buffer core</span>`,
+  `<span class="kw">#include</span> <span class="st">&lt;vector&gt;</span>`,
+  `<span class="kw">#include</span> <span class="st">&lt;string&gt;</span>`,
+  ``,
+  `<span class="kw">class</span> <span class="ty">TextBuffer</span> {`,
+  `<span class="kw">public</span>:`,
+  `  <span class="kw">void</span> <span class="fn">insertChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col, <span class="ty">char</span> ch);`,
+  `  <span class="kw">void</span> <span class="fn">deleteChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col);`,
+  `  <span class="kw">void</span> <span class="fn">splitLine</span>(<span class="ty">int</span> row, <span class="ty">int</span> col);`,
+  `  <span class="kw">void</span> <span class="fn">mergeLines</span>(<span class="ty">int</span> row);`,
+  ``,
+  `<span class="kw">private</span>:`,
+  `  <span class="ty">std::vector</span>&lt;<span class="ty">std::string</span>&gt; <span class="nm">lines</span>;`,
+  `  <span class="ty">int</span> <span class="nm">cursorRow</span> <span class="pu">=</span> <span class="nu">0</span>;`,
+  `  <span class="ty">int</span> <span class="nm">cursorCol</span> <span class="pu">=</span> <span class="nu">0</span>;`,
+  `};`,
+  ``,
+  `<span class="cm">// render only the visible viewport</span>`,
+  `<span class="kw">void</span> <span class="fn">EditorWidget::paintEvent</span>(<span class="ty">QPaintEvent</span> <span class="pu">*</span>) {`,
+  `  <span class="ty">int</span> <span class="nm">startRow</span> <span class="pu">=</span> scrollY <span class="pu">/</span> fontH;`,
+];
+
+const CURSOR_LINE = 6;
+
+const numEl  = document.getElementById('line-nums');
+const codeEl = document.getElementById('code-area');
+
+lines.forEach((line, i) => {
+  const numSpan = document.createElement('span');
+  numSpan.textContent = i + 1;
+  if (i === CURSOR_LINE) numSpan.classList.add('active');
+  numEl.appendChild(numSpan);
+
+  const lineDiv = document.createElement('div');
+  lineDiv.className = 'code-line' + (i === CURSOR_LINE ? ' cursor-line' : '');
+  lineDiv.innerHTML = (line || '&nbsp;') + (i === CURSOR_LINE ? '<span class="cursor"></span>' : '');
+  codeEl.appendChild(lineDiv);
+});
+
+/* ── Scroll reveal ── */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ── Copy code ── */
+function copyCode(btn) {
+  const body = btn.closest('.tech-code-block').querySelector('.code-block-body');
+  navigator.clipboard.writeText(body.innerText).then(() => {
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 2000);
+  });
+}
+</script>
+</body>
+</html>
