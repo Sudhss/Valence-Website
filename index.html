@@ -1558,7 +1558,7 @@
       const body = btn.closest('.tech-code-block').querySelector('.code-block-body');
       navigator.clipboard.writeText(body.innerText).then(() => {
         btn.textContent = 'copied!';
-        setTimeout(() => btn.textContent = 'copy', 200);
+        setTimeout(() => btn.textContent = 'copy', 2000);
       });
     }
     function showComingSoon(e) {
@@ -1582,7 +1582,7 @@
       setTimeout(() => {
         popup.classList.remove("show");
         overlay.classList.remove("show");
-      }, 100);
+      }, 2000);
     }
   </script>
   <div id="overlay" class="overlay"></div>
