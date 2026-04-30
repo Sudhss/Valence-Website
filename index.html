@@ -227,6 +227,56 @@
       animation: pulse 2s ease infinite;
     }
 
+    /* ── RELEASE BADGE ── */
+    .release-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(48, 209, 88, 0.08);
+      border: 0.5px solid rgba(48, 209, 88, 0.3);
+      border-radius: 980px;
+      padding: 7px 20px 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #30d158;
+      letter-spacing: 0.02em;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.8s ease both;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .release-badge:hover {
+      background: rgba(48, 209, 88, 0.14);
+      border-color: rgba(48, 209, 88, 0.45);
+      color: #30d158;
+    }
+
+    .release-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #30d158;
+      animation: releaseBlink 1.4s ease-in-out infinite;
+      box-shadow: 0 0 6px rgba(48, 209, 88, 0.6);
+    }
+
+    @keyframes releaseBlink {
+
+      0%,
+      100% {
+        opacity: 1;
+        box-shadow: 0 0 6px rgba(48, 209, 88, 0.6);
+      }
+
+      50% {
+        opacity: 0.3;
+        box-shadow: 0 0 2px rgba(48, 209, 88, 0.2);
+      }
+    }
+
     @keyframes pulse {
 
       0%,
@@ -832,6 +882,7 @@
       font-size: 12.5px;
       line-height: 1.75;
       overflow-x: auto;
+      white-space: pre;
     }
 
     .tech-list {
@@ -1115,6 +1166,11 @@
   <section id="hero">
     <div class="hero-bg"></div>
 
+    <a href="https://github.com/Sudhss/Valence/releases/download/v1.0/ValenceSetup.exe" class="release-badge">
+      <span class="release-dot"></span>
+      V1 Released — Download Valence Now
+    </a>
+
     <div class="hero-eyebrow">
       <span class="eyebrow-dot"></span>
       Built from scratch &nbsp;·&nbsp; C++ &amp; Qt
@@ -1130,7 +1186,7 @@
     </p>
 
     <div class="hero-actions">
-      <a href="https://github.com/Sudhss/Valence/releases/download/v1.0/ValenceSetup.exe" class="btn-primary" ">
+      <a href="https://github.com/Sudhss/Valence/releases/download/v1.0/ValenceSetup.exe" class="btn-primary">
         Download for Windows
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M8 2v8M4 7l4 4 4-4M2 14h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
@@ -1431,35 +1487,29 @@
               <span class="code-block-lang">TextBuffer.cpp</span>
               <button class="code-block-copy" onclick="copyCode(this)">copy</button>
             </div>
-            <div class="code-block-body">
-              <span class="kw">void</span> <span class="fn">TextBuffer::insertChar</span>(<span class="ty">int</span>
-              row, <span class="ty">int</span> col, <span class="ty">char</span> ch) {
-              lines[row].insert(col, <span class="nu">1</span>, ch);
-              }
+            <pre class="code-block-body"><span class="kw">void</span> <span class="fn">TextBuffer::insertChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col, <span class="ty">char</span> ch) {
+  lines[row].insert(col, <span class="nu">1</span>, ch);
+}
 
-              <span class="kw">void</span> <span class="fn">TextBuffer::deleteChar</span>(<span class="ty">int</span>
-              row, <span class="ty">int</span> col) {
-              <span class="kw">if</span> (col == <span class="nu">0</span>) {
-              mergeLines(row);
-              <span class="kw">return</span>;
-              }
-              lines[row].erase(col - <span class="nu">1</span>, <span class="nu">1</span>);
-              }
+<span class="kw">void</span> <span class="fn">TextBuffer::deleteChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col) {
+  <span class="kw">if</span> (col == <span class="nu">0</span>) {
+    mergeLines(row);
+    <span class="kw">return</span>;
+  }
+  lines[row].erase(col - <span class="nu">1</span>, <span class="nu">1</span>);
+}
 
-              <span class="kw">void</span> <span class="fn">TextBuffer::splitLine</span>(<span class="ty">int</span>
-              row, <span class="ty">int</span> col) {
-              <span class="ty">std::string</span> tail = lines[row].substr(col);
-              lines[row] = lines[row].substr(<span class="nu">0</span>, col);
-              lines.insert(lines.begin() + row + <span class="nu">1</span>, tail);
-              }
+<span class="kw">void</span> <span class="fn">TextBuffer::splitLine</span>(<span class="ty">int</span> row, <span class="ty">int</span> col) {
+  <span class="ty">std::string</span> tail = lines[row].substr(col);
+  lines[row] = lines[row].substr(<span class="nu">0</span>, col);
+  lines.insert(lines.begin() + row + <span class="nu">1</span>, tail);
+}
 
-              <span class="kw">void</span> <span class="fn">TextBuffer::mergeLines</span>(<span class="ty">int</span>
-              row) {
-              <span class="kw">if</span> (row == <span class="nu">0</span>) <span class="kw">return</span>;
-              lines[row-<span class="nu">1</span>] += lines[row];
-              lines.erase(lines.begin() + row);
-              }
-            </div>
+<span class="kw">void</span> <span class="fn">TextBuffer::mergeLines</span>(<span class="ty">int</span> row) {
+  <span class="kw">if</span> (row == <span class="nu">0</span>) <span class="kw">return</span>;
+  lines[row-<span class="nu">1</span>] += lines[row];
+  lines.erase(lines.begin() + row);
+}</pre>
           </div>
         </div>
       </div>
@@ -1482,7 +1532,8 @@
             fill="currentColor" />
         </svg>
       </a>
-      <a href="#" class="btn-ghost">Download binary →</a>
+      <a href="https://github.com/Sudhss/Valence/releases/download/v1.0/ValenceSetup.exe" class="btn-ghost">Download
+        binary →</a>
     </div>
   </section>
 
@@ -1491,9 +1542,9 @@
     <span class="footer-logo">Valence</span>
     <div class="footer-links">
       <a href="https://github.com/Sudhss/Valence" target="_blank">GitHub</a>
-      <a href="https://github.com/Sudhss/Valence">Docs</a>
-      <a href="https://github.com/Sudhss/Valence">Changelog</a>
-      <a href="https://github.com/Sudhss/Valence">License</a>
+      <a href="https://github.com/Sudhss/Valence#readme" target="_blank">Docs</a>
+      <a href="https://github.com/Sudhss/Valence/releases" target="_blank">Changelog</a>
+      <a href="https://github.com/Sudhss/Valence/blob/main/LICENSE" target="_blank">License</a>
     </div>
     <span class="footer-copy">Built from scratch in C++ &amp; Qt</span>
   </footer>
@@ -1586,7 +1637,7 @@
     }
   </script>
   <div id="overlay" class="overlay"></div>
-<div id="popup" class="popup">Release Date : 10th May 2026 </div>
+  <div id="popup" class="popup">V1 is live — downloading now! 🎉</div>
 </body>
 
 </html>
