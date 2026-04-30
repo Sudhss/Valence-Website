@@ -5,10 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Valence — Code Editor</title>
+  <meta name="description" content="Valence is a minimal, blazing-fast code editor built entirely from scratch in C++ and Qt. No Electron. No bloat. Just pure engineering.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@100;200;300;400;500;600;700&display=swap"
-    rel="stylesheet">
   <link
     href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap"
     rel="stylesheet">
@@ -104,51 +103,6 @@
       list-style: none;
     }
 
-    .popup {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -40%) scale(0.9);
-
-      z-index: 99999;
-
-      background: #111;
-      color: #fff;
-      padding: 28px 48px;
-      border-radius: 20px;
-
-      font-size: 20px;
-      font-weight: 500;
-
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s ease;
-
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
-    }
-
-    .popup.show {
-      pointer-events: auto;
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 99998;
-
-      opacity: 0;
-      transition: 0.3s;
-      pointer-events: none;
-    }
-
-    .overlay.show {
-      opacity: 1;
-      pointer-events: all;
-    }
 
     .nav-links a {
       color: var(--text2);
@@ -824,6 +778,42 @@
       border-top: 1.5px solid rgba(255, 69, 58, 0.5);
     }
 
+    /* completed milestones */
+    .timeline-item.timeline-done {
+      background: rgba(48, 209, 88, 0.04);
+      border-color: rgba(48, 209, 88, 0.18);
+      border-top: 1.5px solid rgba(48, 209, 88, 0.55);
+    }
+
+    .timeline-item.timeline-done:hover {
+      background: rgba(48, 209, 88, 0.08);
+    }
+
+    .timeline-done-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 500;
+      color: #30d158;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 12px;
+    }
+
+    .timeline-done-badge::before {
+      content: '✓';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(48, 209, 88, 0.15);
+      font-size: 9px;
+      line-height: 1;
+    }
+
     /* ── TECH SECTION ── */
     #tech {
       max-width: 1100px;
@@ -1220,7 +1210,7 @@
   <div class="spec-bar">
     <div class="spec-bar-inner">
       <div class="spec-item reveal">
-        <div class="spec-num">0<span>ms</span></div>
+        <div class="spec-num"><span>&lt;</span>50<span>ms</span></div>
         <div class="spec-label">startup time</div>
       </div>
       <div class="spec-divider reveal reveal-d1"></div>
@@ -1230,8 +1220,8 @@
       </div>
       <div class="spec-divider reveal reveal-d2"></div>
       <div class="spec-item reveal reveal-d2">
-        <div class="spec-num">0<span></span></div>
-        <div class="spec-label">dependencies</div>
+        <div class="spec-num">1<span></span></div>
+        <div class="spec-label">dep — just Qt</div>
       </div>
       <div class="spec-divider reveal reveal-d3"></div>
       <div class="spec-item reveal reveal-d3">
@@ -1241,7 +1231,7 @@
       <div class="spec-divider reveal reveal-d4"></div>
       <div class="spec-item reveal reveal-d4">
         <div class="spec-num">5<span>wks</span></div>
-        <div class="spec-label">built in</div>
+        <div class="spec-label">build time</div>
       </div>
     </div>
   </div>
@@ -1397,30 +1387,33 @@
   <section id="timeline-section">
     <div class="timeline-inner">
       <div class="timeline-header reveal">
-        <p class="section-label">Build roadmap</p>
+        <p class="section-label">Build log</p>
         <h2 class="section-title">Five weekends.<br><em>One editor.</em></h2>
       </div>
       <div class="timeline-grid">
-        <div class="timeline-item reveal">
+        <div class="timeline-item timeline-done reveal">
           <span class="timeline-num">1</span>
           <div class="timeline-week">Weekend 1</div>
           <div class="timeline-name">Foundation</div>
           <div class="timeline-desc">TextBuffer class. Qt project skeleton. Static text renders to screen via QPainter.
           </div>
+          <span class="timeline-done-badge">Done</span>
         </div>
-        <div class="timeline-item reveal reveal-d1">
+        <div class="timeline-item timeline-done reveal reveal-d1">
           <span class="timeline-num">2</span>
           <div class="timeline-week">Weekend 2</div>
           <div class="timeline-name">The Typewriter</div>
           <div class="timeline-desc">Cursor renders and blinks. Type characters, move left/right, backspace on a single
             line.</div>
+          <span class="timeline-done-badge">Done</span>
         </div>
-        <div class="timeline-item reveal reveal-d2">
+        <div class="timeline-item timeline-done reveal reveal-d2">
           <span class="timeline-num">3</span>
           <div class="timeline-week">Weekend 3</div>
           <div class="timeline-name">Full Navigation</div>
           <div class="timeline-desc">Multi-line editing, Enter splits lines, Backspace merges. Viewport scrolling with
             wheelEvent.</div>
+          <span class="timeline-done-badge">Done</span>
         </div>
         <div class="timeline-item reveal reveal-d3">
           <span class="timeline-num">4</span>
@@ -1612,32 +1605,7 @@
         setTimeout(() => btn.textContent = 'copy', 2000);
       });
     }
-    function showComingSoon(e) {
-      e.preventDefault();
-
-      const popup = document.getElementById("popup");
-      const overlay = document.getElementById("overlay");
-
-      // reset if already showing
-      popup.classList.remove("show");
-      overlay.classList.remove("show");
-
-      // force reflow (important)
-      void popup.offsetWidth;
-
-      // show again
-      popup.classList.add("show");
-      overlay.classList.add("show");
-
-      // auto hide
-      setTimeout(() => {
-        popup.classList.remove("show");
-        overlay.classList.remove("show");
-      }, 1000);
-    }
   </script>
-  <div id="overlay" class="overlay"></div>
-  <div id="popup" class="popup">V1 is live — downloading now! 🎉</div>
 </body>
 
 </html>
