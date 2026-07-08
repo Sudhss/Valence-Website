@@ -1268,12 +1268,12 @@
   <div class="spec-bar">
     <div class="spec-bar-inner">
       <div class="spec-item reveal">
-        <div class="spec-num"><span>&lt;</span>50<span>ms</span></div>
-        <div class="spec-label">startup time</div>
+        <div class="spec-num"><span>&lt;</span>7<span>ms</span></div>
+        <div class="spec-label">input latency</div>
       </div>
       <div class="spec-divider reveal reveal-d1"></div>
       <div class="spec-item reveal reveal-d1">
-        <div class="spec-num">~<span>2k</span></div>
+        <div class="spec-num">2.3<span>k</span></div>
         <div class="spec-label">lines of C++</div>
       </div>
       <div class="spec-divider reveal reveal-d2"></div>
@@ -1312,8 +1312,7 @@
           </svg>
         </div>
         <h3>Zero-overhead rendering</h3>
-        <p>Custom QPainter loop draws only visible lines. No layout engine. No DOM. Sub-millisecond frame times even on
-          large files.</p>
+        <p>Custom QPainter loop draws only visible lines. No layout engine. No DOM. Renders well within the 16.6ms frame budget regardless of file size.</p>
       </div>
       <div class="feature-card reveal reveal-d1">
         <div class="feature-icon">
@@ -1325,8 +1324,7 @@
           </svg>
         </div>
         <h3>Logical cursor model</h3>
-        <p>Cursor tracked as (row, col) and converted to pixels only at paint time. Eliminating an entire class of
-          rendering bugs.</p>
+        <p>Cursor tracked as (row, col) and converted to pixels via O(1) monospace math only at paint time. No pixel-drift bugs.</p>
       </div>
       <div class="feature-card reveal reveal-d2">
         <div class="feature-icon">
@@ -1350,9 +1348,8 @@
             <path d="M7 4v4" />
           </svg>
         </div>
-        <h3>Native file I/O</h3>
-        <p>Open and save any file instantly with Qt's native file dialogs. Reads directly into the line buffer — no
-          intermediate copies.</p>
+        <h3>Integrated build & run</h3>
+        <p>Hit F5 to auto-save, compile with g++, and execute — all piped through the embedded PowerShell terminal. No context switching.</p>
       </div>
       <div class="feature-card reveal reveal-d1">
         <div class="feature-icon">
@@ -1365,8 +1362,7 @@
           </svg>
         </div>
         <h3>Line number gutter</h3>
-        <p>Rendered with a fixed 50px offset. Current line highlighted. Gutter background separated with a subtle 0.5px
-          border.</p>
+        <p>Dynamic-width gutter that scales with digit count. Current line highlighted. Separated with a subtle 1px border.</p>
       </div>
       <div class="feature-card reveal reveal-d2">
         <div class="feature-icon">
@@ -1378,9 +1374,8 @@
             <path d="M7 5v4" />
           </svg>
         </div>
-        <h3>Smart auto-indent</h3>
-        <p>On Enter, the editor copies the leading whitespace from the current line. Keeps your indentation intact
-          across the session.</p>
+        <h3>Command-pattern undo</h3>
+        <p>Every edit is recorded as a reversible action. Temporal grouping merges rapid keystrokes into logical undo units — Ctrl+Z undoes words, not characters.</p>
       </div>
     </div>
   </section>
@@ -1390,10 +1385,9 @@
     <div id="architecture">
       <div class="reveal">
         <p class="section-label">Architecture</p>
-        <h2 class="section-title">Five clean<br><em>subsystems.</em></h2>
+        <h2 class="section-title">Four clean<br><em>layers.</em></h2>
         <p class="section-body">
-          Each layer has a single responsibility. The buffer owns the data. The renderer owns the pixels. They never
-          talk directly — only through the cursor.
+          Strict top-down dependency hierarchy. Theme → Core → Editor → UI. Each layer depends only on layers below it. The UI never touches the buffer directly — it goes through EditorWidget.
         </p>
       </div>
       <div class="arch-cards">
@@ -1478,18 +1472,20 @@
             wheelEvent.</div>
           <span class="timeline-done-badge">Done</span>
         </div>
-        <div class="timeline-item reveal reveal-d3">
+        <div class="timeline-item timeline-done reveal reveal-d3">
           <span class="timeline-num">4</span>
           <div class="timeline-week">Weekend 4</div>
           <div class="timeline-name">File I/O &amp; Syntax</div>
-          <div class="timeline-desc">Open and save real .cpp files. Tokenizer colors keywords, strings, and comments.
+          <div class="timeline-desc">Open and save real .cpp files. Tokenizer colors keywords, types, strings, numbers, preprocessor directives, and comments.
           </div>
+          <span class="timeline-done-badge">Done</span>
         </div>
-        <div class="timeline-item reveal reveal-d4">
+        <div class="timeline-item timeline-done reveal reveal-d4">
           <span class="timeline-num">5</span>
           <div class="timeline-week">Weekend 5</div>
-          <div class="timeline-name">Polish &amp; MVP</div>
-          <div class="timeline-desc">Line number gutter. Auto-indent. Edge case fixes. Resume-ready MVP ships.</div>
+          <div class="timeline-name">Full IDE Shell</div>
+          <div class="timeline-desc">Multi-tab editing, file explorer with toolbar, embedded terminal, undo/redo, auto-bracket closing, build & run pipeline. V1 shipped.</div>
+          <span class="timeline-done-badge">Done</span>
         </div>
       </div>
     </div>
@@ -1507,8 +1503,7 @@
               <div class="tech-bullet" style="background:#30d158"></div>
               <div>
                 <h5>Array of Lines over Rope</h5>
-                <p>Rope trees are powerful but overkill. For files under 20k lines, vector&lt;string&gt; is faster to
-                  implement and reason about — and finishes in the time budget.</p>
+                <p>Rope trees give O(log n) insertion but O(log n) line access. Our rendering pipeline needs O(1) line access 50+ times per frame — vector&lt;string&gt; is the optimal tradeoff for files under 100k lines.</p>
               </div>
             </li>
             <li class="reveal reveal-d1">
@@ -1523,16 +1518,14 @@
               <div class="tech-bullet" style="background:#af52de"></div>
               <div>
                 <h5>Viewport culling from day one</h5>
-                <p>Only draw lines between startRow and endRow based on scrollY. A 10,000-line file runs at the same FPS
-                  as a 10-line file.</p>
+                <p>Only draw lines between startRow and endRow based on scrollY. Rendering is O(V) where V ≈ 50 visible lines — a 100,000-line file renders at the exact same speed as a 10-line file.</p>
               </div>
             </li>
             <li class="reveal reveal-d3">
               <div class="tech-bullet" style="background:#ffd60a"></div>
               <div>
-                <h5>Monospace font enforced at init</h5>
-                <p>QFont initialized with a fixed monospace font at startup. Variable-width fonts break all cursor math
-                  — this constraint is non-negotiable.</p>
+                <h5>Monospace font assumption</h5>
+                <p>charWidth measured once from 'M' at startup. Every pixel↔column conversion is O(1) integer math. Proportional fonts would require O(n) text measurement per call — a non-starter for 60fps.</p>
               </div>
             </li>
           </ul>
@@ -1544,27 +1537,25 @@
               <button class="code-block-copy" onclick="copyCode(this)">copy</button>
             </div>
             <pre class="code-block-body"><span class="kw">void</span> <span class="fn">TextBuffer::insertChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col, <span class="ty">char</span> ch) {
-  lines[row].insert(col, <span class="nu">1</span>, ch);
+  col = std::clamp(col, <span class="nu">0</span>, (<span class="ty">int</span>)lines_[row].size());
+  lines_[row].insert(col, <span class="nu">1</span>, ch);
 }
 
 <span class="kw">void</span> <span class="fn">TextBuffer::deleteChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col) {
-  <span class="kw">if</span> (col == <span class="nu">0</span>) {
-    mergeLines(row);
-    <span class="kw">return</span>;
-  }
-  lines[row].erase(col - <span class="nu">1</span>, <span class="nu">1</span>);
+  <span class="kw">if</span> (col <= <span class="nu">0</span>) { mergeLines(row); <span class="kw">return</span>; }
+  lines_[row].erase(col - <span class="nu">1</span>, <span class="nu">1</span>);
 }
 
 <span class="kw">void</span> <span class="fn">TextBuffer::splitLine</span>(<span class="ty">int</span> row, <span class="ty">int</span> col) {
-  <span class="ty">std::string</span> tail = lines[row].substr(col);
-  lines[row] = lines[row].substr(<span class="nu">0</span>, col);
-  lines.insert(lines.begin() + row + <span class="nu">1</span>, tail);
+  <span class="ty">std::string</span> tail = lines_[row].substr(col);
+  lines_[row] = lines_[row].substr(<span class="nu">0</span>, col);
+  lines_.insert(lines_.begin() + row + <span class="nu">1</span>, tail);
 }
 
 <span class="kw">void</span> <span class="fn">TextBuffer::mergeLines</span>(<span class="ty">int</span> row) {
-  <span class="kw">if</span> (row == <span class="nu">0</span>) <span class="kw">return</span>;
-  lines[row-<span class="nu">1</span>] += lines[row];
-  lines.erase(lines.begin() + row);
+  <span class="kw">if</span> (row <= <span class="nu">0</span>) <span class="kw">return</span>;
+  lines_[row-<span class="nu">1</span>] += lines_[row];
+  lines_.erase(lines_.begin() + row);
 }</pre>
           </div>
         </div>
@@ -1577,8 +1568,7 @@
     <div class="cta-bg"></div>
     <p class="section-label" style="margin-bottom:20px">Open source</p>
     <h2 class="cta-title">Built in the open.<br><em>Free forever.</em></h2>
-    <p class="cta-sub">Clone the repo, study the code, build on it. Valence is a proof that systems software doesn't
-      need frameworks.</p>
+    <p class="cta-sub">Clone the repo, study the code, build on it. Valence is proof that you don't need Electron or a browser engine to build a real editor — just C++ and a graphics API.</p>
     <div class="hero-actions" style="justify-content:center">
       <a href="https://github.com/Sudhss/Valence" target="_blank" class="btn-primary">
         View on GitHub
@@ -1625,10 +1615,10 @@
       ``,
 
       `<span class="kw">private</span>:`,
-      `  <span class="ty">std::vector</span>&lt;<span class="ty">std::string</span>&gt; <span class="nm">lines</span>;`,
-      `  <span class="ty">int </span> <span class="nm">cursorRow</span> <span class="pu">=</span> <span class="nu">0</span>;`,
-      `  <span class="ty">int </span> <span class="nm">cursorCol</span> <span class="pu">=</span> <span class="nu">0</span>;`,
+      `  <span class="ty">std::vector</span>&lt;<span class="ty">std::string</span>&gt; <span class="nm">lines_</span>;`,
       `};`,
+      ``,
+      `<span class="cm">// cursor lives in EditorWidget, not the buffer</span>`,
 
       ``,
 
