@@ -16,7 +16,9 @@
 .vp-sticky {
   position: sticky;
   top: 0;
-  height: 100vh;
+  /* dvh tracks the viewport as the mobile URL bar collapses; with vh the
+     sticky stage jumps by the bar's height mid-scroll. */
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -94,5 +96,31 @@
    one screen, one composed frame, no sticky travel. */
 @media (prefers-reduced-motion: reduce) {
   .vp-section { height: auto; }
-  .vp-sticky { position: relative; height: 78vh; min-height: 520px; }
+  .vp-sticky { position: relative; height: 78dvh; min-height: 520px; }
 }
+
+/* When no scene loads — a small screen, or no WebGL — the section must stop
+   being a scroll instrument. Otherwise the runway it reserves for the camera
+   stays behind as two screens of empty black between the copy and whatever
+   comes next. */
+.vp-section.vp-no-scene {
+  height: auto;
+}
+
+.vp-section.vp-no-scene .vp-sticky {
+  position: relative;
+  height: auto;
+  padding: 96px 0 88px;
+}
+
+.vp-section.vp-no-scene .vp-copy {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0 auto;
+  padding: 0 24px;
+  max-width: 620px;
+}
+
+.vp-section.vp-no-scene .vp-grain { display: none; }

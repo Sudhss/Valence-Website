@@ -24,7 +24,12 @@
   <!-- NAV -->
   <nav>
     <a href="#hero" class="nav-logo">Valence</a>
-    <ul class="nav-links">
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu"
+            aria-label="Open navigation menu">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+    <ul class="nav-links" id="nav-menu">
       <li><a href="#features">Features</a></li>
       <li><a href="#architecture">Architecture</a></li>
       <li><a href="#benchmarks-section">Benchmarks</a></li>

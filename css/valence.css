@@ -1388,3 +1388,104 @@ input:focus-visible,
     text-align: center;
   }
 }
+
+/* ── MOBILE NAVIGATION ──
+   The nav links were display:none below 900px with nothing in their place, so
+   a phone got a logo and no way to reach any section or the download. This is
+   the replacement: a button that expands the same list, so there is exactly one
+   set of links and no duplicated markup to drift. */
+
+.nav-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.nav-toggle-bar {
+  display: block;
+  width: 16px;
+  height: 1.5px;
+  background: var(--text);
+  border-radius: 1px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bar:first-child {
+  transform: translateY(3.25px) rotate(45deg);
+}
+.nav-toggle[aria-expanded="true"] .nav-toggle-bar:last-child {
+  transform: translateY(-3.25px) rotate(-45deg);
+}
+
+@media (max-width: 900px) {
+  .nav-toggle { display: flex; }
+
+  /* Overrides the original `display: none`, which is what removed mobile
+     navigation entirely. */
+  .nav-links {
+    display: flex;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 0 14px;
+    background: rgba(10, 10, 10, 0.97);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border);
+
+    /* Closed state. Kept in the layout and hidden with visibility so the
+       animation has something to animate, and so the links stay out of the tab
+       order while closed. */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.18s ease, transform 0.22s ease, visibility 0.22s;
+  }
+
+  .nav-links.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+
+  .nav-links li { width: 100%; }
+
+  /* 48px rows: comfortably above the 44px minimum for a touch target. */
+  .nav-links a {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 24px;
+    font-size: 15px;
+  }
+
+  .nav-links .nav-cta {
+    margin: 10px 24px 0;
+    justify-content: center;
+    border-radius: 8px;
+  }
+}
+
+/* The copy button was a 14px-tall tap target, which is roughly a third of the
+   minimum anyone can reliably hit. */
+@media (max-width: 900px) {
+  .code-block-copy {
+    min-height: 44px;
+    min-width: 60px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

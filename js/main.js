@@ -186,9 +186,30 @@ function setupBufferScene() {
   };
 
   const load = async () => {
+    // Under 560px the canvas is too small for the file to read as anything but
+    // texture, and the download is not worth spending someone's data on.
+    //
+    // Marking the section is the important half. Without it the canvas went
+    // away but the 240vh scroll runway stayed, so a phone scrolled through two
+    // full screens of nothing between the copy and the next section — which
+    // looks exactly like the page has broken.
+    if (window.innerWidth < 560) {
+      canvas.remove();
+      section.classList.add('vp-no-scene');
+      return;
+    }
+
+    const narrow = window.innerWidth < 1024;
     const { createBufferScene } = await import('./buffer-scene.js');
-    scene = createBufferScene(canvas);
-    if (!scene) { canvas.remove(); return; }   // no WebGL: leave the section as copy
+    scene = createBufferScene(canvas, {
+      maxLines: narrow ? 1400 : Infinity,
+      dprCap: narrow ? 1.5 : 2,
+    });
+    if (!scene) {                              // no WebGL: leave the section as copy
+      canvas.remove();
+      section.classList.add('vp-no-scene');
+      return;
+    }
 
     scene.setProgress(readProgress());
     paintReadout();
@@ -212,6 +233,23 @@ function setupBufferScene() {
   }, { rootMargin: '600px 0px' });
   preload.observe(section);
 
+  // Re-frame on orientation change. The scene keeps its geometry — rebuilding
+  // 112k instances on a rotate would be far worse than the reframe — but the
+  // camera and the section's scroll runway both have to follow.
+  let resizeQueued = false;
+  window.addEventListener('resize', () => {
+    if (resizeQueued) return;
+    resizeQueued = true;
+    requestAnimationFrame(() => {
+      resizeQueued = false;
+      if (!scene) return;
+      scene.resize();
+      scene.setProgress(readProgress());
+      paintReadout();
+      if (!scene._running && !reduced.matches) scene.renderOnce();
+    });
+  }, { passive: true });
+
   const runner = new IntersectionObserver((entries) => {
     if (!scene || reduced.matches) return;
     if (entries[0].isIntersecting) scene.start(); else scene.stop();
@@ -219,7 +257,50 @@ function setupBufferScene() {
   runner.observe(section);
 }
 
+/* ── Mobile navigation ───────────────────────────────────────────────────
+ * Below 900px the link list is a panel rather than a row. One list, one set of
+ * hrefs — a second hidden copy for mobile is how the two drift apart.
+ */
+function setupNav() {
+  const nav = document.querySelector('nav');
+  const toggle = document.querySelector('.nav-toggle');
+  const menu = document.querySelector('#nav-menu');
+  if (!nav || !toggle || !menu) return;
+
+  const setOpen = (open) => {
+    // The class goes on the list itself rather than on an ancestor: one
+    // element, one state, and no dependence on a parent attribute selector.
+    menu.classList.toggle('is-open', open);
+    nav.dataset.open = open ? 'true' : 'false';
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+  };
+  setOpen(false);
+
+  toggle.addEventListener('click', () => {
+    setOpen(nav.dataset.open !== 'true');
+  });
+
+  // Following a link should close the panel — every link here is an in-page
+  // anchor, so without this the menu stays over the section it just jumped to.
+  menu.addEventListener('click', (e) => {
+    if (e.target.closest('a')) setOpen(false);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && nav.dataset.open === 'true') {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+
+  // Returning to a desktop width must not leave the panel state stuck on.
+  const wide = window.matchMedia('(min-width: 901px)');
+  wide.addEventListener('change', (e) => { if (e.matches) setOpen(false); });
+}
+
 function boot() {
+  setupNav();
   buildHeroEditor();
   setupReveal();
   setupCopy();

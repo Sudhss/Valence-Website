@@ -50,11 +50,15 @@ export class BufferScene {
   constructor(canvas, opts = {}) {
     this.canvas = canvas;
     this.onReady = opts.onReady;
+    // A phone does not need the whole file to make the point, and 112k
+    // instances plus a 300ms build is a real cost on one.
+    this.maxLines = opts.maxLines || Infinity;
+    this.dprCap = opts.dprCap || 2;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas, antialias: false, alpha: true, powerPreference: 'high-performance',
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.dprCap));
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.5, 500);
@@ -87,7 +91,9 @@ export class BufferScene {
    * non-space character with the colour of the token it belongs to. Runs once,
    * at build. Nothing in here happens per frame. */
   _layout() {
-    this.lines = SOURCE_LINES;
+    this.lines = this.maxLines < SOURCE_LINES.length
+      ? SOURCE_LINES.slice(0, this.maxLines)
+      : SOURCE_LINES;
     this.lineCount = this.lines.length;
 
     const glyphs = [];
@@ -246,6 +252,13 @@ export class BufferScene {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+
+    // How much of a line is worth framing, and how far the camera may swing off
+    // axis. Both fall away on a portrait frame: forty columns is already more
+    // than is legible on a phone, and an oblique angle only costs width.
+    const portrait = this.camera.aspect < 1;
+    this.frameCols = portrait ? 22 : (this.camera.aspect < 1.4 ? 38 : 56);
+    this.angleScale = portrait ? 0.35 : (this.camera.aspect < 1.4 ? 0.7 : 1);
   }
 
   /* At rest the camera sits square to the page and close, so the thing reads as
@@ -262,12 +275,28 @@ export class BufferScene {
     const topLine = Math.floor(p * Math.max(1, this.lineCount - BAND - 1));
     this._paintBand(topLine);
 
-    const focusX = 20;
     const focusY = -(topLine + BAND / 2) * LINE_H;
     const swing = Math.sin(p * Math.PI);          // out and back across the scroll
 
-    const dist = 30 + swing * 56;
-    const angle = swing * 0.78 + this.pointerEased.x * 0.14;
+    // The original hand-tuned distances, restored: 30 units at rest so the
+    // section opens looking like an editor you could read, widening to ~86 for
+    // the reveal. Deriving distance purely from framing pushed the resting
+    // camera to 52+ and shrank every glyph past legibility.
+    //
+    // Aspect only CORRECTS this, and only upward: a portrait frame has a
+    // fraction of a desktop's horizontal field of view, so it needs more
+    // distance to hold the same columns. A wide frame does not, and keeps the
+    // tuned value.
+    const base = 30 + swing * 56;
+    const tan = Math.tan((this.camera.fov * Math.PI / 180) / 2);
+    const needW = this.frameCols * CHAR_W;
+    const minForWidth = (needW / 2) / (tan * Math.max(0.1, this.camera.aspect));
+    const dist = Math.max(base, minForWidth);
+
+    const focusX = (this.frameCols * CHAR_W) / 2;
+    // An oblique angle costs horizontal room, which a portrait frame has none
+    // of to spare, so the swing is damped on narrow viewports.
+    const angle = swing * 0.78 * this.angleScale + this.pointerEased.x * 0.14 * this.angleScale;
     const lift = swing * 20 + this.pointerEased.y * 3;
 
     this.camera.position.set(
@@ -276,6 +305,13 @@ export class BufferScene {
       Math.cos(angle) * dist + 10,
     );
     this.camera.lookAt(focusX, focusY - swing * 8, RECESS * 0.5);
+
+    // Fog is set from the actual distance each frame. Fixed near/far values
+    // meant that pulling back pushed the whole file past fogFar and faded it
+    // into the background colour.
+    const u = this.mesh.material.uniforms;
+    u.uFogNear.value = dist * 0.85;
+    u.uFogFar.value = dist * 2.6;
   }
 
   renderOnce() { this.renderer.render(this.scene, this.camera); }

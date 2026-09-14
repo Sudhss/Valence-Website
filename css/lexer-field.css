@@ -249,3 +249,10 @@
   .lex-glyph { display: none; }
   .lex-btn[data-lex-run] { display: none; }
 }
+
+/* Bin labels were 9px — below anything readable on a phone, and the bins are
+   wide enough at four-per-row to carry a real size. */
+@media (max-width: 760px) {
+  .lex-bin-label { font-size: 10.5px; }
+  .lex-btn { min-height: 44px; padding: 11px 18px; }   /* 37px was under the 44px minimum */
+}
