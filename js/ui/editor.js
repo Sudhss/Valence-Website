@@ -72,6 +72,7 @@ export function mountEditor(host, { onChange } = {}) {
   let states = commentStates(state.buffer.lines);
   let matches = [];
   let dragging = false;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function measure() {
     const r = host.getBoundingClientRect();
@@ -123,7 +124,7 @@ export function mountEditor(host, { onChange } = {}) {
   }
 
   function animateScroll(now) {
-    const t = Math.min(1, (now - scrollStart) / 140);
+    const t = reduced ? 1 : Math.min(1, (now - scrollStart) / 140);
     const e = 1 - Math.pow(1 - t, 3); // OutCubic
     scrollY = scrollFrom + (scrollTarget - scrollFrom) * e;
     draw();
@@ -173,7 +174,7 @@ export function mountEditor(host, { onChange } = {}) {
     ctx.textAlign = "left";
 
     // Caret with glow; solid for a beat after each keystroke.
-    const blinkOn = !focused || Math.floor((performance.now() - blinkEpoch) / 500) % 2 === 0;
+    const blinkOn = !focused || reduced || Math.floor((performance.now() - blinkEpoch) / 500) % 2 === 0;
     if (blinkOn) {
       const cx = xFromCol(state.cursor.col);
       const cy = yFromRow(state.cursor.row);

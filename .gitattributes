@@ -1,0 +1,4 @@
+# Generated files are compared byte-for-byte in CI; keep them LF everywhere.
+readme/*.svg text eol=lf
+tests/golden/*.json text eol=lf
+js/data/*.js text eol=lf

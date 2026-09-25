@@ -1,0 +1,36 @@
+# Holds the site's JavaScript ports of Valence's tokenizer, undo manager and
+# judge comparator to the output of the real C++ (tests/golden/*.json, produced
+# by tools/golden/make_golden.py from ../src). If a port drifts from the editor,
+# this goes red.
+
+name: ports
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ports match the C++
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Tokenizer, undo, judge vs golden output
+        run: npm test
+
+      - name: README animations are up to date
+        run: |
+          node tools/readme/make-svgs.mjs
+          git diff --exit-code -- readme/ || {
+            echo "::error::readme/*.svg is stale. Run: node tools/readme/make-svgs.mjs"
+            exit 1
+          }

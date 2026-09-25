@@ -198,7 +198,7 @@ function judgeSvg() {
     });
     t += 0.15;
   });
-  body += `<text x="24" y="${H - 16}" font-family="${UI}" font-size="12" fill="${C.text3}">Real runs: ${esc(JUDGE_RUNS.compiler.split(" (")[0])} ${JUDGE_RUNS.flags}, recorded ${JUDGE_RUNS.recorded}. Verdicts computed from the output by the port of Judge::outputsMatch.</text>`;
+  body += `<text x="24" y="${H - 16}" font-family="${UI}" font-size="12" fill="${C.text3}">Real runs: g++ ${esc(JUDGE_RUNS.compiler.match(/\d+\.\d+\.\d+/)?.[0] || "")} ${JUDGE_RUNS.flags}, recorded ${JUDGE_RUNS.recorded}. Verdicts computed from the output by the port of Judge::outputsMatch.</text>`;
   return frame(W, H, "Five real solutions judged: Accepted, Wrong Answer, Time Limit Exceeded, Runtime Error, Compile Error", body);
 }
 
