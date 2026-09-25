@@ -1,569 +1,270 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Valence — Code Editor</title>
-  <meta name="description" content="Valence is a minimal, blazing-fast code editor built from scratch in C++ and Qt, with a built-in competitive-programming judge. No Electron. No bloat. Just pure engineering.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap"
-    rel="stylesheet">
-  <link rel="icon" type="image/png" href="logo.png">
-  <link rel="stylesheet" href="css/valence.css">
-  <link rel="stylesheet" href="css/lexer-field.css">
-  <link rel="stylesheet" href="css/viewport.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valence — Code Editor</title>
+<meta name="description" content="Valence is a code editor built from scratch in C++17 and Qt 6: its own text buffer, renderer, tokenizer and undo, plus a built-in competitive-programming judge. No Electron.">
+<meta name="theme-color" content="#0b0c10">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+<script type="importmap">{ "imports": { "three": "./js/vendor/three.module.min.js" } }</script>
+<script type="module" src="js/main.js"></script>
 </head>
-
 <body>
+<a class="skip" href="#buffer">Skip the flight through the source</a>
 
-  <a class="skip-link" href="#hero">Skip to content</a>
+<canvas id="gl" aria-hidden="true"></canvas>
 
-  <!-- NAV -->
-  <nav>
-    <a href="#hero" class="nav-logo">Valence</a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu"
-            aria-label="Open navigation menu">
-      <span class="nav-toggle-bar"></span>
-      <span class="nav-toggle-bar"></span>
-    </button>
-    <ul class="nav-links" id="nav-menu">
-      <li><a href="#features">Features</a></li>
-      <li><a href="#architecture">Architecture</a></li>
-      <li><a href="#benchmarks-section">Benchmarks</a></li>
-      <li><a href="#timeline-section">Roadmap</a></li>
-      <li><a href="https://github.com/Sudhss/Valence" target="_blank">GitHub</a></li>
-      <li><a href="#cta" class="nav-cta">Download</a></li>
-    </ul>
+<!-- Valence's own chrome: a tab strip for navigation, a gutter, a status bar. -->
+<header class="tabs">
+  <a class="brand" href="#top" aria-label="Valence, back to top"><img src="logo.png" alt="" width="18" height="18"><span>Valence</span></a>
+  <nav class="tablist" aria-label="Sections">
+    <a href="#top" data-tab="top">valence.md</a>
+    <a href="#buffer" data-tab="buffer">text_buffer.cpp</a>
+    <a href="#lexer" data-tab="lexer">cpp_highlighter.cpp</a>
+    <a href="#arch" data-tab="arch">src/</a>
+    <a href="#judge" data-tab="judge">judge.cpp</a>
+    <a href="#bench" data-tab="bench">bench.txt</a>
+    <a href="#log" data-tab="log">git log</a>
   </nav>
+  <a class="tab-cta" href="https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe">Download V3</a>
+</header>
 
-  <main id="content">
+<div class="gutter" aria-hidden="true"><div class="gutter-inner" id="gutter"></div></div>
 
-  <!-- HERO -->
-  <section id="hero">
-    <div class="hero-bg"></div>
+<footer class="status" aria-label="Status bar">
+  <span class="st-dot" aria-hidden="true"></span>
+  <span id="st-file">valence.md</span>
+  <span id="st-pos">Ln 1, Col 1</span>
+  <span class="st-spacer"></span>
+  <span id="st-fps" title="Frames per second of this page, measured">— fps</span>
+  <span class="st-hide-sm">C++</span>
+  <span class="st-hide-sm">UTF-8</span>
+  <span class="st-hide-sm">LF</span>
+</footer>
 
-    <a href="https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe" class="release-badge">
-      <span class="release-dot"></span>
-      V3 is here — Download Valence Now
-    </a>
+<main id="top">
 
-    <div class="hero-eyebrow">
-      <span class="eyebrow-dot"></span>
-      Built from scratch &nbsp;·&nbsp; C++ &amp; Qt
+  <!-- ─────────────────────────────── the source, flown through ── -->
+  <section class="canyon" id="canyon" aria-label="Valence's source code">
+    <div class="canyon-stage" data-view="canyon">
+      <div class="canyon-hud" aria-hidden="true">
+        <span id="cy-file">src/theme/theme.h</span>
+        <span id="cy-range">lines 1–46 · painted</span>
+      </div>
+      <div class="canyon-fallback" hidden>
+        <pre id="cy-fallback-code"></pre>
+      </div>
     </div>
 
-    <h1 class="hero-title">
-      Write code<br><em>at the speed</em><br>of thought.
-    </h1>
-
-    <p class="hero-sub">
-      A minimal, blazing-fast code editor built entirely from scratch in C++ and Qt.
-      No Electron. No bloat. Just pure engineering.
-    </p>
-
-    <div class="hero-actions">
-      <a href="https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe" class="btn-primary">
-        Download for Windows
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 2v8M4 7l4 4 4-4M2 14h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-            stroke-linejoin="round" />
-        </svg>
-      </a>
-      <a href="https://drive.google.com/file/d/19LRDGAYcyk6hOefjOphHl4DiLIAWtQUf/view?usp=sharing" target="_blank" class="btn-ghost">Documentation</a>
-      <a href="https://github.com/Sudhss/Valence" target="_blank" class="btn-ghost">View source →</a>
-    </div>
-
-    <!-- EDITOR MOCKUP -->
-    <div class="editor-preview-wrap">
-      <div class="editor-glow"></div>
-      <div class="editor-chrome">
-        <div class="editor-titlebar">
-          <div class="traffic-lights">
-            <div class="tl tl-r"></div>
-            <div class="tl tl-y"></div>
-            <div class="tl tl-g"></div>
-          </div>
-          <span class="editor-filename">main.cpp — Valence</span>
+    <div class="canyon-copy">
+      <div class="beat beat-hero">
+        <a class="pill" href="https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe"><i></i>V3 is out · the judge ships</a>
+        <h1 class="hero-name">Valence</h1>
+        <p class="tagline">Write code at the speed of thought<span class="caret" aria-hidden="true"></span></p>
+        <p class="lede">A code editor built from nothing in C++17 and Qt&nbsp;6: its own text buffer, renderer, tokenizer and undo, and a competitive-programming judge that never leaves the window. No Electron. No QTextEdit.</p>
+        <div class="actions">
+          <a class="btn btn-accent" href="https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe">Download for Windows</a>
+          <a class="btn" href="https://github.com/Sudhss/Valence" target="_blank" rel="noopener">Read the source</a>
+          <a class="btn btn-quiet" href="https://drive.google.com/file/d/19LRDGAYcyk6hOefjOphHl4DiLIAWtQUf/view?usp=sharing" target="_blank" rel="noopener">Documentation</a>
         </div>
-        <div class="editor-body">
-          <div class="line-numbers" id="line-nums"></div>
-          <div class="code-area" id="code-area"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- SPEC BAR -->
-  <div class="spec-bar">
-    <div class="spec-bar-inner">
-      <div class="spec-item reveal">
-        <div class="spec-num"><span>&lt;</span>7<span>ms</span></div>
-        <div class="spec-label">input latency</div>
-      </div>
-      <div class="spec-divider reveal reveal-d1"></div>
-      <div class="spec-item reveal reveal-d1">
-        <div class="spec-num">6.5<span>k</span></div>
-        <div class="spec-label">lines of C++</div>
-      </div>
-      <div class="spec-divider reveal reveal-d2"></div>
-      <div class="spec-item reveal reveal-d2">
-        <div class="spec-num">1<span></span></div>
-        <div class="spec-label">dep — just Qt</div>
-      </div>
-      <div class="spec-divider reveal reveal-d3"></div>
-      <div class="spec-item reveal reveal-d3">
-        <div class="spec-num">60<span>fps</span></div>
-        <div class="spec-label">render loop</div>
-      </div>
-      <div class="spec-divider reveal reveal-d4"></div>
-      <div class="spec-item reveal reveal-d4">
-        <div class="spec-num">5<span>wks</span></div>
-        <div class="spec-label">build time</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FEATURES -->
-  <section id="features">
-    <div style="max-width:1100px;margin:0 auto;text-align:center;margin-bottom:64px" class="reveal">
-      <p class="section-label">Core features</p>
-      <h2 class="section-title" style="max-width:600px;margin:0 auto">Built the right way,<br><em>from the ground
-          up.</em></h2>
-    </div>
-    <div class="features-inner">
-      <div class="feature-card reveal">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10 2v6l3 3-3 3v4" />
-            <path d="M6 6l-3 4 3 4" />
-            <path d="M14 6l3 4-3 4" />
-          </svg>
-        </div>
-        <h3>Zero-overhead rendering</h3>
-        <p>Custom QPainter loop draws only visible lines. No layout engine. No DOM. Renders well within the 16.6ms frame budget regardless of file size.</p>
-      </div>
-      <div class="feature-card reveal reveal-d1">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="9" width="4" height="8" rx="1" />
-            <rect x="8" y="5" width="4" height="12" rx="1" />
-            <rect x="13" y="2" width="4" height="15" rx="1" />
-          </svg>
-        </div>
-        <h3>Logical cursor model</h3>
-        <p>Cursor tracked as (row, col) and converted to pixels via O(1) monospace math only at paint time. No pixel-drift bugs.</p>
-      </div>
-      <div class="feature-card reveal reveal-d2">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 6h4M3 10h8M3 14h5" />
-            <circle cx="14" cy="10" r="4" />
-            <path d="M12.5 10h3M14 8.5v3" />
-          </svg>
-        </div>
-        <h3>C++ syntax highlighting</h3>
-        <p>Hand-written tokenizer with no regex overhead. Identifies keywords, types, strings, and comments in a single
-          O(n) pass.</p>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4h12a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" />
-            <path d="M3 8h14" />
-            <path d="M7 4v4" />
-          </svg>
-        </div>
-        <h3>Integrated build & run</h3>
-        <p>Hit F5 to auto-save, compile with g++, and execute — all piped through the embedded PowerShell terminal. No context switching.</p>
-      </div>
-      <div class="feature-card reveal reveal-d1">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" y1="5" x2="16" y2="5" />
-            <line x1="4" y1="9" x2="16" y2="9" />
-            <line x1="4" y1="13" x2="16" y2="13" />
-            <line x1="4" y1="17" x2="10" y2="17" />
-          </svg>
-        </div>
-        <h3>Line number gutter</h3>
-        <p>Dynamic-width gutter that scales with digit count. Current line highlighted. Separated with a subtle 1px border.</p>
-      </div>
-      <div class="feature-card reveal reveal-d2">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 5h8" />
-            <path d="M4 9h12" />
-            <path d="M4 13h12" />
-            <path d="M7 5v4" />
-          </svg>
-        </div>
-        <h3>Command-pattern undo</h3>
-        <p>Every edit is recorded as a reversible action. Temporal grouping merges rapid keystrokes into logical undo units — Ctrl+Z undoes words, not characters.</p>
-      </div>
-      <div class="feature-card reveal reveal-d3">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(245,245,247,0.5)" stroke-width="1.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 5h5M4 9h5M4 13h5" />
-            <path d="M13 6l2 2 3-3" />
-            <path d="M13 14l4-4M13 10l4 4" />
-          </svg>
-        </div>
-        <h3>Built-in judge</h3>
-        <p>Store test cases beside the problem, then compile once and pipe every case through the binary. Verdicts are the ones you already know &mdash; AC, WA, TLE, RE &mdash; and a runaway solution is killed at the time limit without freezing the editor.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- LEXER FIELD — the interactive tokenizer -->
-  <section id="lexer" class="lex-section">
-    <div class="lexfield" data-lex-field data-state="idle">
-      <div class="lex-head">
-        <div>
-          <p class="section-label">Run the tokenizer</p>
-          <h2 class="section-title">Every character<br><em>goes somewhere.</em></h2>
-        </div>
-        <p class="lex-intro">
-          This is Valence&rsquo;s own lexer, ported line for line from
-          <code>cpp_highlighter.cpp</code> &mdash; one pass, left to right, no regex and no
-          backtracking. Edit the line, then take it apart and watch each character
-          fall into the bin for the token it was classified as.
-        </p>
+        <p class="hint">The name above is 14,000 characters of Valence's own source. Move through it, then scroll</p>
       </div>
 
-      <div class="lex-line">
-        <label class="visually-hidden" for="lex-input">C++ source line to tokenize</label>
-        <input id="lex-input" class="lex-input" data-lex-input spellcheck="false"
-               autocomplete="off" autocorrect="off" autocapitalize="off"
-               value="for (int i = 0; i &lt; n; i++) cout &lt;&lt; a[i] &lt;&lt; &quot;
-&quot;;">
-        <div class="lex-render" data-lex-render aria-hidden="true"></div>
+      <div class="beat beat-side">
+        <p class="label"><b>01</b> the whole file</p>
+        <h2>This is Valence.</h2>
+        <p>Every line of it: 6,586 across 31 files, in the order the architecture stacks them — theme, core, editor, judge, interface. You are flying over the real source.</p>
       </div>
 
-      <div class="lex-controls">
-        <button type="button" class="lex-btn" data-lex-run aria-pressed="false">tokenize</button>
-        <button type="button" class="lex-btn" data-lex-sample>next sample</button>
-        <p class="lex-readout" data-lex-readout role="status" aria-live="polite"></p>
+      <div class="beat beat-side">
+        <p class="label"><b>02</b> its own colours</p>
+        <h2>Lit by its own lexer.</h2>
+        <p>Every token below was classified in this page by a line-for-line port of <code>cpp_highlighter.cpp</code>, in Valence's palette. The port is tested against the C++ itself, compiled and run on every one of these lines.</p>
       </div>
 
-      <div class="lex-stage" data-lex-stage>
-        <div class="lex-bins" data-lex-bins></div>
+      <div class="beat beat-side">
+        <p class="label"><b>03</b> viewport culling</p>
+        <h2>Only the lit band is drawn.</h2>
+        <p><code>paintEvent</code> walks the visible rows and stops. The band is 46 lines, about one full-height editor. Everything outside it sits in the buffer and costs nothing per frame, which is why a large file paints as fast as a small one.</p>
       </div>
-    </div>
-  </section>
 
-  <!-- VIEWPORT — the buffer, rendered -->
-  <section id="viewport" class="vp-section">
-    <div class="vp-sticky">
-      <canvas class="vp-canvas" data-buffer-canvas></canvas>
-      <div class="vp-grain" aria-hidden="true"></div>
-
-      <div class="vp-copy">
-        <p class="section-label">Rendering</p>
-        <h2 class="section-title">Nine thousand lines.<br><em>Forty-six drawn.</em></h2>
-        <p class="vp-body">
-          This is the whole file, every token of it. The lit band is the viewport
-          &mdash; the only part the editor ever paints. Everything else is in the
-          buffer and out of the frame, which is why a hundred-thousand-line file
-          costs the same per frame as a ten-line one.
-        </p>
-        <dl class="vp-readout">
-          <div><dt>viewport</dt><dd data-vp-range>1&ndash;46</dd></div>
-          <div><dt>drawn</dt><dd data-vp-drawn>46</dd></div>
-          <div><dt>skipped</dt><dd data-vp-skipped>8,954</dd></div>
+      <div class="beat beat-final">
+        <dl class="bignums">
+          <div><dt>6,586</dt><dd>lines in the buffer</dd></div>
+          <div><dt class="lit">46</dt><dd>painted this frame</dd></div>
+          <div><dt>6,540</dt><dd>skipped</dd></div>
         </dl>
       </div>
     </div>
   </section>
 
-  <!-- ARCHITECTURE -->
-  <section>
-    <div id="architecture">
-      <div class="reveal">
-        <p class="section-label">Architecture</p>
-        <h2 class="section-title">Five clean<br><em>layers.</em></h2>
-        <p class="section-body">
-          Strict top-down dependency hierarchy. Theme → Core → Editor → UI. Each layer depends only on layers below it. The UI never touches the buffer directly — it goes through EditorWidget.
-        </p>
+  <!-- ─────────────────────────────── the buffer and the undo stack ── -->
+  <section class="sec" id="buffer" data-file="text_buffer.cpp">
+    <div class="sec-head">
+      <p class="label"><b>text_buffer.cpp</b> the document model</p>
+      <h2>One string per line.</h2>
+      <p class="sec-lede">Valence stores a document as <code>std::vector&lt;std::string&gt;</code>. No rope, no piece table. Finding a line is O(1), which the renderer needs dozens of times a frame. Edits pay the price: typing into a line shifts the rest of that line, and splitting a line shifts every line below it. Type in the editor. The right side is the vector, and each edit shows what it moved.</p>
+    </div>
+
+    <div class="workbench">
+      <div class="ed-window">
+        <div class="ed-tabs"><span class="ed-tab">scratch.cpp</span><span class="ed-hint">try <kbd>cppmain</kbd> then <kbd>Tab</kbd></span></div>
+        <div class="ed-host" id="editor" tabindex="0" role="textbox" aria-multiline="true" aria-label="Editable C++ scratch file, running Valence's editing rules">
+          <canvas class="ed-canvas" aria-hidden="true"></canvas>
+          <textarea class="ed-input" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-hidden="true" tabindex="-1"></textarea>
+          <div class="ed-popup" hidden></div>
+        </div>
+        <div class="ed-status"><span id="ed-pos">Ln 1, Col 1</span><span id="ed-lines"></span><span class="ed-sp"></span><span>C++</span></div>
       </div>
-      <div class="arch-cards">
-        <div class="arch-card arch-card--buf reveal">
-          <div class="arch-card-icon">buf</div>
-          <div>
-            <h4>Text Buffer</h4>
-            <p>std::vector&lt;std::string&gt; — one string per line. Insert, delete, split, merge.</p>
-            <span class="arch-tag">O(1) line access</span>
-          </div>
-        </div>
-        <div class="arch-flow"><span class="arch-flow-arrow">▼</span></div>
-        <div class="arch-card arch-card--cur reveal reveal-d1">
-          <div class="arch-card-icon">cur</div>
-          <div>
-            <h4>Cursor System</h4>
-            <p>Struct { int row; int col }. Logical position only — pixels are derived, never stored.</p>
-            <span class="arch-tag">decoupled from render</span>
-          </div>
-        </div>
-        <div class="arch-flow"><span class="arch-flow-arrow">▼</span></div>
-        <div class="arch-card arch-card--rnd reveal reveal-d2">
-          <div class="arch-card-icon">rnd</div>
-          <div>
-            <h4>Rendering Engine</h4>
-            <p>QPainter in paintEvent. Draws only the visible viewport window, token by token.</p>
-            <span class="arch-tag">viewport culling</span>
-          </div>
-        </div>
-        <div class="arch-flow"><span class="arch-flow-arrow">▼</span></div>
-        <div class="arch-card arch-card--inp reveal reveal-d3">
-          <div class="arch-card-icon">inp</div>
-          <div>
-            <h4>Input Handler</h4>
-            <p>keyPressEvent routes chars to buffer, arrows to cursor, and calls update() once per event.</p>
-            <span class="arch-tag">single repaint/event</span>
-          </div>
-        </div>
-        <div class="arch-flow"><span class="arch-flow-arrow">▼</span></div>
-        <div class="arch-card arch-card--lex reveal reveal-d4">
-          <div class="arch-card-icon">lex</div>
-          <div>
-            <h4>Tokenizer</h4>
-            <p>Single-pass lexer classifies tokens into keyword, type, string, comment, or plain text.</p>
-            <span class="arch-tag">O(n) per line</span>
-          </div>
+
+      <div class="viz">
+        <div class="viz-view" data-view="vector" aria-label="The buffer's lines as a vector of strings"></div>
+        <div class="viz-caption" aria-live="polite">
+          <p class="cost"><span>lines_</span> <b id="cost-op">waiting for an edit</b></p>
+          <p class="cost-detail" id="cost-detail">std::string::insert shifts the rest of its line. std::vector::insert moves every later line.</p>
         </div>
       </div>
+    </div>
+
+    <div class="undo-row">
+      <div class="undo-copy">
+        <p class="label"><b>undo_manager.cpp</b> the command pattern</p>
+        <h3>Ctrl+Z undoes words, not characters.</h3>
+        <p>Every edit is recorded as an action. Single-character edits merge into one group while they are the same kind, next to each other, on the same side of a word boundary, and at most 400&nbsp;ms apart. Anything else opens a new group. The towers are the undo and redo stacks, live.</p>
+        <div class="undo-controls">
+          <button type="button" class="btn btn-small" id="undo-btn">Undo <kbd>Ctrl Z</kbd></button>
+          <button type="button" class="btn btn-small" id="redo-btn">Redo <kbd>Ctrl Y</kbd></button>
+        </div>
+        <p class="decision" id="undo-decision" aria-live="polite">Type in the editor above.</p>
+      </div>
+      <div class="viz-view undo-view" data-view="undo" aria-label="Undo and redo stacks"></div>
     </div>
   </section>
 
-  <!-- BENCHMARKS -->
-  <section id="benchmarks-section">
-    <div style="max-width: 1100px; margin: 0 auto;">
-      <div class="reveal" style="text-align: center;">
-        <p class="section-label">Performance verified</p>
-        <h2 class="section-title">Tested with<br><em>hard data.</em></h2>
-        <p class="section-body" style="margin: 0 auto;">No automated GUI scripts. No random assumptions. We built a headless C++ benchmark suite to isolate the core data structures and measure latency at the nanosecond scale.</p>
+  <!-- ─────────────────────────────── the tokenizer ── -->
+  <section class="sec" id="lexer" data-file="cpp_highlighter.cpp">
+    <div class="sec-head">
+      <p class="label"><b>cpp_highlighter.cpp</b> the tokenizer</p>
+      <h2>Every character goes somewhere.</h2>
+      <p class="sec-lede">One pass, left to right, no regex, no backtracking. The scan head crosses the line once; each time it closes a token, that token's characters leave for the lane of their type. These are Valence's rules, ported branch for branch, down to the one that knows <code>1'000'000'007</code> is a number and not a character literal.</p>
+    </div>
+    <div class="lex">
+      <div class="lex-bar">
+        <label class="visually-hidden" for="lex-input">A line of C++ to tokenize</label>
+        <input id="lex-input" class="lex-input" spellcheck="false" autocomplete="off" maxlength="72" value="const long long MOD = 1'000'000'007; // prime">
+        <button type="button" class="btn btn-small btn-accent" id="lex-run">Tokenize</button>
+        <button type="button" class="btn btn-small btn-quiet" id="lex-next">Another line</button>
       </div>
-
-      <div class="bench-grid">
-        <div class="bench-card reveal">
-          <div class="bench-glow"></div>
-          <div class="bench-metric"><span>&lt;</span>9<span>ms</span></div>
-          <div class="bench-title">End-to-End Logic Latency</div>
-          <div class="bench-desc">The critical path (insert + undo record + full state rebuild + viewport tokenization) takes under 9ms for a 10,000-line file. Combined with ~4ms for QPainter, it fits comfortably in a sub-15ms frame budget.</div>
-        </div>
-        
-        <div class="bench-card reveal reveal-d1">
-          <div class="bench-glow"></div>
-          <div class="bench-metric">56<span>µs</span></div>
-          <div class="bench-title">Midpoint Insertion Penalty</div>
-          <div class="bench-desc">We tested the O(N) worst-case vector insertion by splitting a 50,000-line document directly in the middle. The CPU cache absorbs the penalty—it takes just 56 microseconds.</div>
-        </div>
-
-        <div class="bench-card reveal reveal-d2">
-          <div class="bench-glow"></div>
-          <div class="bench-metric">45<span>%</span></div>
-          <div class="bench-title">Memory Overhead</div>
-          <div class="bench-desc">Valence stores raw text in native C++ strings. A 50,000-line file (~1.8MB of raw text) requires less than 4MB of heap allocation. Over 95% less memory than standard editors.</div>
-        </div>
-
-        <div class="bench-card reveal reveal-d3">
-          <div class="bench-glow"></div>
-          <div class="bench-metric">900<span>k</span></div>
-          <div class="bench-title">Lines Tokenized / Sec</div>
-          <div class="bench-desc">Our zero-allocation, single-pass C++ syntax tokenizer eliminates Regex overhead entirely, averaging ~1.1 microseconds per line.</div>
-        </div>
-      </div>
-
-      <div class="bench-methodology reveal reveal-d4">
-        <strong>Methodology:</strong> Timings captured using <code>std::chrono::high_resolution_clock</code> running directly against Valence's core C++ objects (<code>TextBuffer</code>, <code>UndoManager</code>, <code>CppHighlighter</code>). Compiled with <code>g++ -O2</code> on Windows 64-bit.
-      </div>
+      <div class="lex-view" data-view="lexer" aria-label="Characters sorted into token lanes"></div>
+      <ol class="lex-lanes" id="lex-lanes" aria-live="polite"></ol>
+      <p class="fine">Measured in C++: about 500&nbsp;ns per line of real code, two million lines a second on one core (<a href="data/benchmark-2026-09-26.txt">benchmark</a>).</p>
     </div>
   </section>
 
-  <!-- TIMELINE -->
-  <section id="timeline-section">
-    <div class="timeline-inner">
-      <div class="timeline-header reveal">
-        <p class="section-label">Build log</p>
-        <h2 class="section-title">Five weekends.<br><em>Three releases.</em></h2>
-        <a href="https://drive.google.com/file/d/1XdZPMOoIRBXEi9pW_gVxovPvJWC5iXtR/view?usp=sharing" target="_blank" class="pill-link">View Version Report</a>
+  <!-- ─────────────────────────────── architecture ── -->
+  <section class="sec" id="arch" data-file="src/">
+    <div class="sec-head">
+      <p class="label"><b>src/</b> architecture</p>
+      <h2>Six layers. Each leans only on what is below it.</h2>
+      <p class="sec-lede">Theme at the foundation, then the core data structures, the editor, the judge, the interface, and the entry point. Each tower is one file; its height is its lines of code. The light running through it is a single keystroke, following the calls it really makes. Drag to turn it.</p>
+    </div>
+    <div class="arch">
+      <div class="arch-view" data-view="arch" aria-label="Valence's 31 source files as towers on six layers"></div>
+      <aside class="arch-info">
+        <p class="label">one keystroke</p>
+        <ol class="callpath" id="callpath">
+          <li data-file="src/editor/editor_widget.cpp"><code>EditorWidget::keyPressEvent</code></li>
+          <li data-file="src/core/text_buffer.cpp"><code>TextBuffer::insertChar</code></li>
+          <li data-file="src/core/undo_manager.cpp"><code>UndoManager::recordInsert</code></li>
+          <li data-file="src/editor/cpp_highlighter.cpp"><code>CppHighlighter::tokenize</code></li>
+          <li data-file="src/editor/editor_widget.cpp"><code>EditorWidget::paintEvent</code></li>
+        </ol>
+        <div class="arch-file" id="arch-file" aria-live="polite"><p class="fine">Point at a tower to read the file.</p></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────── the judge ── -->
+  <section class="sec" id="judge" data-file="judge.cpp">
+    <div class="sec-head">
+      <p class="label"><b>judge.cpp</b> competitive programming</p>
+      <h2>Compile once. Run every case. Never freeze.</h2>
+      <p class="sec-lede"><kbd>Ctrl+Enter</kbd> saves, compiles with <code>g++ -O2 -std=gnu++17</code>, and pipes every test case through the binary: AC, WA, TLE, RE or CE. A runaway solution is killed at the time limit and the editor never blocks. These are real runs, recorded and replayed at their real speed. The verdicts are worked out in your browser from the recorded output, by the judge's own comparison rule.</p>
+    </div>
+
+    <div class="cph" id="cph">
+      <div class="cph-src">
+        <div class="cph-tabs" role="tablist" aria-label="Solutions" id="cph-tabs"></div>
+        <pre class="cph-code" id="cph-code" tabindex="0"></pre>
       </div>
-      <div class="timeline-grid">
-        <div class="timeline-item timeline-done reveal">
-          <span class="timeline-num">1</span>
-          <div class="timeline-week">Weekend 1</div>
-          <div class="timeline-name">Foundation</div>
-          <div class="timeline-desc">TextBuffer class. Qt project skeleton. Static text renders to screen via QPainter.
+      <div class="cph-panel">
+        <div class="cph-head">
+          <div>
+            <p class="cph-title" id="cph-problem"></p>
+            <p class="fine" id="cph-limits"></p>
           </div>
-          <span class="timeline-done-badge">Done</span>
+          <button type="button" class="btn btn-accent btn-small" id="cph-run">Run all <kbd>Ctrl Enter</kbd></button>
         </div>
-        <div class="timeline-item timeline-done reveal reveal-d1">
-          <span class="timeline-num">2</span>
-          <div class="timeline-week">Weekend 2</div>
-          <div class="timeline-name">The Typewriter</div>
-          <div class="timeline-desc">Cursor renders and blinks. Type characters, move left/right, backspace on a single
-            line.</div>
-          <span class="timeline-done-badge">Done</span>
-        </div>
-        <div class="timeline-item timeline-done reveal reveal-d2">
-          <span class="timeline-num">3</span>
-          <div class="timeline-week">Weekend 3</div>
-          <div class="timeline-name">Full Navigation</div>
-          <div class="timeline-desc">Multi-line editing, Enter splits lines, Backspace merges. Viewport scrolling with
-            wheelEvent.</div>
-          <span class="timeline-done-badge">Done</span>
-        </div>
-        <div class="timeline-item timeline-done reveal reveal-d3">
-          <span class="timeline-num">4</span>
-          <div class="timeline-week">Weekend 4</div>
-          <div class="timeline-name">File I/O &amp; Syntax</div>
-          <div class="timeline-desc">Open and save real .cpp files. Tokenizer colors keywords, types, strings, numbers, preprocessor directives, and comments.
-          </div>
-          <span class="timeline-done-badge">Done</span>
-        </div>
-        <div class="timeline-item timeline-done reveal reveal-d4">
-          <span class="timeline-num">5</span>
-          <div class="timeline-week">Weekend 5</div>
-          <div class="timeline-name">Full IDE Shell</div>
-          <div class="timeline-desc">Multi-tab editing, file explorer with toolbar, embedded terminal, undo/redo, auto-bracket closing, build & run pipeline. V1 shipped.</div>
-          <span class="timeline-done-badge">Done</span>
-        </div>
-        <div class="timeline-item timeline-done reveal">
-          <span class="timeline-num">6</span>
-          <div class="timeline-week">V2</div>
-          <div class="timeline-name">Workflow</div>
-          <div class="timeline-desc">Inline file and folder creation, F2 renaming, C++ boilerplate injection,
-            workspace-aware saving, and an integrated terminal rebuilt to behave like a real one.</div>
-          <span class="timeline-done-badge">Done</span>
-        </div>
-        <div class="timeline-item timeline-done reveal reveal-d1">
-          <span class="timeline-num">7</span>
-          <div class="timeline-week">V3</div>
-          <div class="timeline-name">The Judge</div>
-          <div class="timeline-desc">Built-in test-case runner with AC/WA/TLE/RE verdicts. Real auto-indentation.
-            Incremental highlighting and eased scrolling, so a large file costs the same per frame as a small one.</div>
-          <span class="timeline-done-badge">Done</span>
-        </div>
+        <p class="cph-summary" id="cph-summary" aria-live="polite">Pick a solution and run it.</p>
+        <pre class="cph-compile" id="cph-compile" hidden></pre>
+        <ol class="cph-cases" id="cph-cases"></ol>
+        <p class="fine" id="cph-provenance"></p>
       </div>
     </div>
-  </section>
 
-  <!-- TECH -->
-  <section>
-    <div id="tech">
-      <div class="tech-split">
-        <div class="reveal">
-          <p class="section-label">Tech decisions</p>
-          <h2 class="section-title">Why every<br><em>choice matters.</em></h2>
-          <ul class="tech-list" style="margin-top:36px">
-            <li class="reveal">
-              <div class="tech-bullet" style="background:#30d158"></div>
-              <div>
-                <h5>Array of Lines over Rope</h5>
-                <p>Rope trees give O(log n) insertion but O(log n) line access. Our rendering pipeline needs O(1) line access 50+ times per frame — vector&lt;string&gt; is the optimal tradeoff for files under 100k lines.</p>
-              </div>
-            </li>
-            <li class="reveal reveal-d1">
-              <div class="tech-bullet" style="background:#2997ff"></div>
-              <div>
-                <h5>Logical cursor, not pixel cursor</h5>
-                <p>Tracking cursor in (row, col) and converting to pixels at render time eliminates an entire class of
-                  drift bugs when the font changes or the viewport scrolls.</p>
-              </div>
-            </li>
-            <li class="reveal reveal-d2">
-              <div class="tech-bullet" style="background:#af52de"></div>
-              <div>
-                <h5>Viewport culling from day one</h5>
-                <p>Only draw lines between startRow and endRow based on scrollY. Rendering is O(V) where V ≈ 50 visible lines — a 100,000-line file renders at the exact same speed as a 10-line file.</p>
-              </div>
-            </li>
-            <li class="reveal reveal-d3">
-              <div class="tech-bullet" style="background:#ffd60a"></div>
-              <div>
-                <h5>Monospace font assumption</h5>
-                <p>charWidth measured once from 'M' at startup. Every pixel↔column conversion is O(1) integer math. Proportional fonts would require O(n) text measurement per call — a non-starter for 60fps.</p>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <div class="reveal reveal-d1">
-          <div class="tech-code-block">
-            <div class="code-block-header">
-              <span class="code-block-lang">TextBuffer.cpp</span>
-              <button class="code-block-copy" onclick="copyCode(this)">copy</button>
-            </div>
-            <pre class="code-block-body"><span class="kw">void</span> <span class="fn">TextBuffer::insertChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col, <span class="ty">char</span> ch) {
-  col = std::clamp(col, <span class="nu">0</span>, (<span class="ty">int</span>)lines_[row].size());
-  lines_[row].insert(col, <span class="nu">1</span>, ch);
-}
-
-<span class="kw">void</span> <span class="fn">TextBuffer::deleteChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col) {
-  <span class="kw">if</span> (col <= <span class="nu">0</span>) { mergeLines(row); <span class="kw">return</span>; }
-  lines_[row].erase(col - <span class="nu">1</span>, <span class="nu">1</span>);
-}
-
-<span class="kw">void</span> <span class="fn">TextBuffer::splitLine</span>(<span class="ty">int</span> row, <span class="ty">int</span> col) {
-  <span class="ty">std::string</span> tail = lines_[row].substr(col);
-  lines_[row] = lines_[row].substr(<span class="nu">0</span>, col);
-  lines_.insert(lines_.begin() + row + <span class="nu">1</span>, tail);
-}
-
-<span class="kw">void</span> <span class="fn">TextBuffer::mergeLines</span>(<span class="ty">int</span> row) {
-  <span class="kw">if</span> (row <= <span class="nu">0</span>) <span class="kw">return</span>;
-  lines_[row-<span class="nu">1</span>] += lines_[row];
-  lines_.erase(lines_.begin() + row);
-}</pre>
-          </div>
-        </div>
+    <div class="rule">
+      <div class="rule-copy">
+        <h3>The rule, exactly.</h3>
+        <p>Trailing spaces, tabs and carriage returns on each line are ignored, and so are trailing blank lines. Everything else must match, including case. Edit either side.</p>
+        <p class="rule-verdict" id="rule-verdict" aria-live="polite"></p>
       </div>
+      <label class="rule-box"><span>Program output</span><textarea id="rule-actual" spellcheck="false" rows="5"></textarea></label>
+      <label class="rule-box"><span>Expected</span><textarea id="rule-expected" spellcheck="false" rows="5"></textarea></label>
     </div>
   </section>
 
-  <!-- CTA -->
-  <section id="cta">
-    <div class="cta-bg"></div>
-    <p class="section-label" style="margin-bottom:20px">Open source</p>
-    <h2 class="cta-title">Built in the open.<br><em>Free forever.</em></h2>
-    <p class="cta-sub">Clone the repo, study the code, build on it. Valence is proof that you don't need Electron or a browser engine to build a real editor — just C++ and a graphics API.</p>
-    <div class="hero-actions" style="justify-content:center">
-      <a href="https://github.com/Sudhss/Valence" target="_blank" class="btn-primary">
-        View on GitHub
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M8 1C4.134 1 1 4.134 1 8c0 3.09 2.006 5.713 4.788 6.635.35.064.479-.152.479-.337 0-.166-.006-.604-.01-1.187-1.947.423-2.358-.94-2.358-.94-.318-.809-.777-1.024-.777-1.024-.636-.434.048-.425.048-.425.703.05 1.073.722 1.073.722.624 1.07 1.638.761 2.037.582.064-.452.244-.761.444-.936-1.554-.177-3.188-.777-3.188-3.456 0-.763.273-1.388.72-1.877-.072-.177-.312-.888.068-1.85 0 0 .586-.188 1.921.716A6.7 6.7 0 018 4.979a6.7 6.7 0 011.751.236c1.334-.904 1.92-.716 1.92-.716.38.962.14 1.673.069 1.85.448.489.72 1.114.72 1.877 0 2.686-1.637 3.277-3.196 3.45.251.217.474.645.474 1.3 0 .937-.009 1.692-.009 1.922 0 .187.127.405.482.336C12.996 13.71 15 11.088 15 8c0-3.866-3.134-7-7-7z"
-            fill="currentColor" />
-        </svg>
-      </a>
-      <a href="https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe" class="btn-ghost">Download
-        binary →</a>
+  <!-- ─────────────────────────────── benchmarks ── -->
+  <section class="sec" id="bench" data-file="bench.txt">
+    <div class="sec-head">
+      <p class="label"><b>bench.txt</b> performance</p>
+      <h2>Measured, including where it breaks.</h2>
+      <p class="sec-lede">Timed in C++ against Valence's real <code>TextBuffer</code>, <code>UndoManager</code> and <code>CppHighlighter</code>: 26&nbsp;September 2026, g++&nbsp;13.1 <code>-O2</code>, Windows x64. Before V3, every keystroke re-tokenized the whole file to track block comments, and at 50,000 lines that alone overran the frame. V3 rescans from the edited line and stops as soon as the comment state stops changing. Pick a file size.</p>
     </div>
+    <div class="budget">
+      <div class="budget-sizes" role="radiogroup" aria-label="Document size" id="budget-sizes"></div>
+      <div class="budget-chart" id="budget-chart"></div>
+      <p class="budget-note" id="budget-note" aria-live="polite"></p>
+    </div>
+    <dl class="facts" id="facts"></dl>
+    <p class="fine">Logic only; QPainter's drawing time is in none of these. Before-V3 figures: <a href="data/benchmark-2026-09-26.txt">benchmark-2026-09-26.txt</a> (<code>benchmark/benchmark.cpp</code>). V3 figures: <a href="data/keystroke-v3-2026-09-26.json">keystroke-v3-2026-09-26.json</a> (<code>tools/bench/keystroke_v3.cpp</code>, V3's rebuild reproduced line for line), median of three runs. Log scale.</p>
   </section>
 
-  </main>
-
-  <!-- FOOTER -->
-  <footer>
-    <span class="footer-logo">Valence</span>
-    <div class="footer-links">
-      <a href="https://github.com/Sudhss/Valence" target="_blank">GitHub</a>
-      <a href="https://github.com/Sudhss/Valence#readme" target="_blank">Docs</a>
-      <a href="https://github.com/Sudhss/Valence/releases" target="_blank">Changelog</a>
-      <a href="https://github.com/Sudhss/Valence/blob/main/LICENSE" target="_blank">License</a>
+  <!-- ─────────────────────────────── history ── -->
+  <section class="sec" id="log" data-file="git log">
+    <div class="sec-head">
+      <p class="label"><b>git log</b> history</p>
+      <h2>Sixty commits. Three releases.</h2>
     </div>
-    <span class="footer-copy">Built from scratch in C++ &amp; Qt</span>
-  </footer>
+    <div class="history" id="history"></div>
+  </section>
 
-  <script type="module" src="js/main.js"></script>
+  <!-- ─────────────────────────────── download ── -->
+  <section class="sec get" id="get" data-file="Valence_V3_Setup.exe">
+    <h2>Valence V3 for Windows.</h2>
+    <p class="sec-lede">A native installer for Windows 10 and 11, x64. The judge needs <code>g++</code> on your <code>PATH</code>; everything else is in the box.</p>
+    <div class="actions">
+      <a class="btn btn-accent" href="https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe">Download the installer</a>
+      <a class="btn" href="https://github.com/Sudhss/Valence" target="_blank" rel="noopener">Source on GitHub</a>
+      <a class="btn btn-quiet" href="https://drive.google.com/file/d/19LRDGAYcyk6hOefjOphHl4DiLIAWtQUf/view?usp=sharing" target="_blank" rel="noopener">Technical deep-dive</a>
+      <a class="btn btn-quiet" href="https://drive.google.com/file/d/1XdZPMOoIRBXEi9pW_gVxovPvJWC5iXtR/view?usp=sharing" target="_blank" rel="noopener">Version report</a>
+    </div>
+    <p class="credit">Built by <a href="https://github.com/Sudhss" target="_blank" rel="noopener">Sudhanshu Shukla</a>.</p>
+  </section>
+</main>
 </body>
-
 </html>

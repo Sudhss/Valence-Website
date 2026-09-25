@@ -1,0 +1,140 @@
+
+====================================================================================================
+  VALENCE CODE EDITOR — REAL BENCHMARK SUITE
+====================================================================================================
+  All numbers from ACTUAL Valence source code (not simulated).
+  Compiler: g++ -O2 -std=c++17 (MinGW)
+  Timer:    std::chrono::high_resolution_clock (nanosecond precision)
+  System:   Windows
+====================================================================================================
+
+----------------------------------------------------------------------------------------------------
+  BENCHMARK 1: File Load Time (TextBuffer::loadFromFile)
+----------------------------------------------------------------------------------------------------
+  Method: Generate realistic C++ files, load into TextBuffer, measure with
+  chrono::high_resolution_clock (nanosecond precision). 10 trials, report median.
+
+  Lines     Median (ms)     Min (ms)        Max (ms)        Throughput (lines/sec)
+  --------------------------------------------------------------------------------
+  100         0.062           0.042           29.093          1600000
+  500         0.095           0.087           22.865          5263158
+  1000        0.199           0.148           22.363          5030181
+  5000        2.671           1.204           48.683          1871678
+  10000       2.097           1.319           40.963          4768717
+  50000       17.281          6.422           37.152          2893385
+
+----------------------------------------------------------------------------------------------------
+  BENCHMARK 2: Single-Character Insert Throughput
+----------------------------------------------------------------------------------------------------
+  Method: Insert characters sequentially (simulating real typing with
+  line breaks every 80 chars). Measure total time.
+
+  Chars     Total (ms)        Per-Char (ns)     Chars/sec
+  -----------------------------------------------------------------
+  100         0.003             27.0              37037037
+  1000        0.010             10.2              98039216
+  10000       0.131             13.1              76569678
+  50000       0.691             13.8              72411296
+  100000      1.083             10.8              92361688
+
+----------------------------------------------------------------------------------------------------
+  BENCHMARK 3: Undo/Redo Performance (UndoManager)
+----------------------------------------------------------------------------------------------------
+  Method: Record N insert actions with forced grouping every 10 chars
+  (simulating word-level undo). Then undo all, redo all.
+
+  Actions   Record (us)     Undo All (us)   Redo All (us)   Groups
+  ---------------------------------------------------------------------------
+  100         34.0            7.8             5.2             10
+  1000        106.8           66.5            21.5            100
+  10000       1081.6          407.9           169.5           1000
+  50000       7560.9          1531.5          730.5           4000
+
+----------------------------------------------------------------------------------------------------
+  BENCHMARK 4: Syntax Highlighter Throughput
+----------------------------------------------------------------------------------------------------
+  Method: Tokenize realistic C++ lines 10,000 times each.
+  Then simulate full-document tokenization (rebuildCommentState).
+
+  [Per-line tokenization — 10,000 iterations each]
+
+  Line                                                        Tokens    Avg (ns)
+  -------------------------------------------------------------------------------------
+      int value = 42;                                           9         744
+      std::vector<std::string> names = {"hello", "world"};      20        852
+      if (x > 0 && y < 100) { process(x, y); }                  30        647
+      // This is a single-line comment with some text           2         77
+      /* block comment */ int z = func(a, b, c);                19        552
+      #include <iostream>                                       2         49
+      for (auto it = vec.begin(); it != vec.end(); ++it) {      29        1232
+      return static_cast<double>(value) * 3.14159f;             14        474
+      template<typename T, typename U>                          12        440
+      std::shared_ptr<Widget> ptr = std::make_shared<Widget>    23        1253
+
+  [Full-document tokenization — simulates rebuildCommentState()]
+  This runs on EVERY KEYSTROKE in the actual editor.
+
+  Lines     Time (ms)       Per-Line (ns)     Lines/sec         Verdict
+  -------------------------------------------------------------------------------------
+  100         0.068           675               1481481           < 1ms — imperceptible
+  1000        0.510           510               1962323           < 1ms — imperceptible
+  5000        2.520           504               1983970           < 5ms — smooth
+  10000       4.921           492               2032066           < 5ms — smooth
+  50000       30.320          606               1649082           > 16.6ms — WILL DROP FRAMES
+
+----------------------------------------------------------------------------------------------------
+  BENCHMARK 5: Buffer Ops at Various Document Sizes
+----------------------------------------------------------------------------------------------------
+  Method: Load a pre-generated file of N lines, then measure cost of
+  individual operations at the document's midpoint. 10,000 reps each.
+  This tests WORST-CASE for vector<string> (mid-document operations).
+
+  Lines     insertChar (ns)   splitLine (ns)    mergeLines (ns)   deleteChar (ns)
+  ----------------------------------------------------------------------------------
+  100         13                156               156               16
+  1000        6                 695               695               5
+  5000        5                 2363              2363              6
+  10000       8                 5826              5826              5
+  50000       8                 27005             27005             7
+
+----------------------------------------------------------------------------------------------------
+  BENCHMARK 6: Memory Usage (Calculated from Actual Data)
+----------------------------------------------------------------------------------------------------
+  Method: Load files, sum sizeof each string + per-object overhead.
+  std::string on MSVC/MinGW 64-bit = 32 bytes (SSO buffer + ptr + size + cap).
+  This is a LOWER BOUND — real usage includes allocator headers.
+
+  Lines     Content (KB)    Overhead (KB)     Total (KB)        Overhead %
+  --------------------------------------------------------------------------------
+  100         3.2             3.1               6.3               49.6%
+  1000        34.5            31.3              65.8              47.6%
+  5000        178.6           156.3             334.9             46.7%
+  10000       359.7           312.5             672.2             46.5%
+  50000       1855.8          1562.5            3418.3            45.7%
+
+----------------------------------------------------------------------------------------------------
+  BENCHMARK 7: End-to-End Keystroke Cost (The Resume Number)
+----------------------------------------------------------------------------------------------------
+  Method: Simulate what happens on EVERY KEYSTROKE in the actual editor:
+    1. insertChar into TextBuffer
+    2. recordInsert into UndoManager
+    3. rebuildCommentState (tokenize ALL lines)
+    4. tokenize visible lines (~50) for rendering
+  This is the REAL critical path. QPainter rendering is NOT included
+  (that requires the Qt event loop and is measured separately via QElapsedTimer).
+
+  Doc Size  Insert (ns)     Undo Rec (ns)   Rebuild (us)    Render (us)     Total (us)
+  ------------------------------------------------------------------------------------------
+  100         56              250             42.1            22.1            64.4
+  500         65              274             201.5           32.1            234.0
+  1000        88              422             415.7           20.3            436.6
+  5000        265             1740            2552.9          25.4            2580.3
+  10000       464             2815            8660.9          40.2            8704.5
+
+  NOTE: QPainter rendering typically adds ~3-5ms on top of these numbers.
+  Total end-to-end = above + QPainter = the number you put on your resume.
+
+====================================================================================================
+  BENCHMARK COMPLETE — All numbers are real measurements.
+====================================================================================================
+

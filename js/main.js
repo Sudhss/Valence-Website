@@ -1,317 +1,220 @@
-/* Valence — entry point.
+/* Valence site -- wiring.
  *
- * Everything here is progressive enhancement. The page is complete, readable
- * and fully navigable with this file absent or failed: the lexer field
- * degrades to a syntax-highlighted line plus a text readout, and the reveal
- * pass degrades to content simply being visible.
+ * One Stage (one WebGL context) hosts every 3D view; each view draws into the
+ * rectangle of its placeholder element. Everything that is not 3D is plain
+ * DOM and works without WebGL.
  */
 
-import { mountLexerField } from './lexer-field.js';
+import { Stage, webgl2Available } from "./gfx/stage.js";
+import { glyphAtlas } from "./gfx/atlas.js";
+import { createCanyon, BAND } from "./views/canyon.js";
+import { mountChrome } from "./ui/chrome.js";
+import { mountEditor } from "./ui/editor.js";
+import { createVectorView, describeCost } from "./views/vector.js";
+import { createUndoView } from "./views/undostack.js";
+import { BREAK_REASONS } from "./core/undo.js";
+import { createLexerView, LEX_SAMPLES, LANE_ORDER } from "./views/lexer3d.js";
+import { createArchView } from "./views/arch3d.js";
+import { mountJudge } from "./ui/judge.js";
+import { mountBench } from "./ui/bench.js";
+import { mountHistory } from "./ui/history.js";
+import { ROLES } from "./data/arch.js";
+import { TOKEN_NAMES } from "./core/lexer.js";
+import { TOKEN_HEX } from "./gfx/atlas.js";
+import { SOURCE_LINES } from "./data/source.js";
 
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+document.documentElement.classList.add("js");
 
-/* ── The editor mockup in the hero ───────────────────────────────────────
- * Unchanged in behaviour from the original inline script: the same lines, the
- * same cursor row. Moved here so the markup stays markup.
- */
-const HERO_LINES = [
-  `<span class="cm">// Valence — text buffer core</span>`,
-  `<span class="kw">#include</span> <span class="st">&lt;vector&gt;</span>`,
-  `<span class="kw">#include</span> <span class="st">&lt;string&gt;</span>`,
-  ``,
-  `<span class="kw">class</span> <span class="ty">TextBuffer</span> {`,
-  `<span class="kw">public</span>:`,
-  `  <span class="kw">void</span> <span class="fn">insertChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col, <span class="ty">char</span> ch);`,
-  `  <span class="kw">void</span> <span class="fn">deleteChar</span>(<span class="ty">int</span> row, <span class="ty">int</span> col);`,
-  `  <span class="kw">void</span> <span class="fn">splitLine</span>(<span class="ty">int</span> row, <span class="ty">int</span> col);`,
-  `  <span class="kw">void</span> <span class="fn">mergeLines</span>(<span class="ty">int</span> row);`,
-  ``,
-  `<span class="kw">private</span>:`,
-  `  <span class="ty">std::vector</span>&lt;<span class="ty">std::string</span>&gt; <span class="nm">lines_</span>;`,
-  `};`,
-  ``,
-  `<span class="cm">// cursor lives in EditorWidget, not the buffer</span>`,
-  ``,
-  `<span class="cm">// render only the visible viewport</span>`,
-  `<span class="kw">void</span> <span class="fn">EditorWidget::paintEvent</span>(<span class="ty">QPaintEvent</span> <span class="pu">*</span>) {`,
-  `  <span class="ty">int</span> <span class="nm">startRow</span> <span class="pu">=</span> scrollY <span class="pu">/</span> fontH;`,
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+let stage = null;
+const views = {};
+
+/* ---------------------------------------------------------------- canyon */
+
+const canyonEl = $("#canyon");
+const beats = $$(".beat", canyonEl);
+// Scroll progress (0..1) during which each beat is on screen.
+const BEATS = [
+  [0, 0.05],
+  [0.3, 0.44],
+  [0.47, 0.61],
+  [0.64, 0.77],
+  [0.83, 1.01],
 ];
-const CURSOR_LINE = 6;
 
-function buildHeroEditor() {
-  const numEl = document.getElementById('line-nums');
-  const codeEl = document.getElementById('code-area');
-  if (!numEl || !codeEl) return;
-
-  // One fragment, one insertion. The original appended inside the loop, which
-  // is 40 separate mutations of a live tree.
-  const nums = document.createDocumentFragment();
-  const code = document.createDocumentFragment();
-
-  HERO_LINES.forEach((line, i) => {
-    const numSpan = document.createElement('span');
-    numSpan.textContent = String(i + 1);
-    if (i === CURSOR_LINE) numSpan.classList.add('active');
-    nums.appendChild(numSpan);
-
-    const lineDiv = document.createElement('div');
-    lineDiv.className = 'code-line' + (i === CURSOR_LINE ? ' cursor-line' : '');
-    lineDiv.innerHTML = (line || '&nbsp;') + (i === CURSOR_LINE ? '<span class="cursor"></span>' : '');
-    code.appendChild(lineDiv);
-  });
-
-  numEl.appendChild(nums);
-  codeEl.appendChild(code);
+function canyonProgress() {
+  const r = canyonEl.getBoundingClientRect();
+  const span = r.height - window.innerHeight;
+  return Math.max(0, Math.min(1, -r.top / Math.max(1, span)));
 }
 
-/* ── Reveal pass ─────────────────────────────────────────────────────────
- * The original faded and slid every one of forty elements upward on scroll.
- * The CSS now wipes them in horizontally instead — a paint pass, which is what
- * the editor this site is about actually does — and this only has to flip the
- * class. Elements already on screen at load are marked without animating, so
- * the first view is composed rather than assembling itself.
- */
-function setupReveal() {
-  const targets = document.querySelectorAll('.reveal');
-  if (!targets.length) return;
+function updateBeats() {
+  const p = canyonProgress();
+  if (views.canyon) views.canyon.progress = p;
+  beats.forEach((b, i) => b.classList.toggle("on", p >= BEATS[i][0] && p < BEATS[i][1]));
+  canyonEl.classList.toggle("flying", p > 0.26 && p < 0.8);
+}
+window.addEventListener("scroll", updateBeats, { passive: true });
+updateBeats();
 
-  if (reduced.matches || !('IntersectionObserver' in window)) {
-    targets.forEach((el) => el.classList.add('visible', 'no-anim'));
+function canyonStatus() {
+  const v = views.canyon;
+  if (!v) return null;
+  const file = v.fileAt(v.band);
+  const ln = v.band - file.start + 1;
+  $("#cy-file").textContent = file.path;
+  $("#cy-range").textContent = `lines ${ln}–${ln + BAND - 1} · painted`;
+  return { file: file.path.replace(/^src\//, ""), pos: `Ln ${ln}, Col 1` };
+}
+
+const chrome = mountChrome({
+  fileOf(section) {
+    return section?.id === "canyon" ? canyonStatus() : null;
+  },
+});
+
+/* ------------------------------------------------------------- workbench */
+
+const costOp = $("#cost-op");
+const costDetail = $("#cost-detail");
+const decision = $("#undo-decision");
+
+const editor = mountEditor($("#editor"), {
+  onChange(detail, state) {
+    views.vector?.sync(state.buffer.lines, state.cursor);
+    views.undo?.layout();
+    if (detail.kind === "edit") {
+      const c = describeCost(detail, state);
+      costOp.textContent = c.op;
+      costDetail.textContent = c.detail;
+      const rec = detail.undo;
+      if (rec) {
+        decision.innerHTML = "";
+        const b = document.createElement("b");
+        b.textContent = rec.joined ? "Joined the top group" : "New group";
+        decision.append(b, document.createTextNode(rec.joined ? " — same kind, adjacent, same side of a word boundary, within 400 ms." : ` — ${BREAK_REASONS[rec.reason] || rec.reason}.`));
+      }
+    } else if (detail.kind === "undo" || detail.kind === "redo") {
+      decision.textContent = `${detail.kind === "undo" ? "Undo" : "Redo"} replayed ${detail.actions.length} action${detail.actions.length === 1 ? "" : "s"} as one step.`;
+      costOp.textContent = detail.kind === "undo" ? "performUndo()" : "performRedo()";
+      costDetail.textContent = describeCost({ kind: "move" }, state).detail;
+    }
+  },
+});
+$("#undo-btn").addEventListener("click", () => editor.state.performUndo());
+$("#redo-btn").addEventListener("click", () => editor.state.performRedo());
+
+/* ----------------------------------------------------------------- lexer */
+
+const lexInput = $("#lex-input");
+const lexLanes = $("#lex-lanes");
+let sampleAt = 0;
+function renderLanes(counts) {
+  lexLanes.replaceChildren();
+  LANE_ORDER.forEach((type, k) => {
+    const li = document.createElement("li");
+    li.style.color = TOKEN_HEX[type];
+    li.textContent = TOKEN_NAMES[type];
+    const b = document.createElement("b");
+    b.textContent = counts ? counts[k] : 0;
+    li.append(b);
+    lexLanes.append(li);
+  });
+}
+renderLanes(null);
+function runLexer() {
+  views.lexer?.load(lexInput.value);
+}
+$("#lex-run").addEventListener("click", runLexer);
+$("#lex-next").addEventListener("click", () => {
+  sampleAt = (sampleAt + 1) % LEX_SAMPLES.length;
+  lexInput.value = LEX_SAMPLES[sampleAt];
+  runLexer();
+});
+let lexTimer = 0;
+lexInput.addEventListener("input", () => {
+  clearTimeout(lexTimer);
+  lexTimer = setTimeout(runLexer, 350);
+});
+lexInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") runLexer();
+});
+
+/* ------------------------------------------------------------------ arch */
+
+const archFile = $("#arch-file");
+const callpath = $$("#callpath li");
+function showFile(file) {
+  archFile.replaceChildren();
+  if (!file) {
+    const p = document.createElement("p");
+    p.className = "fine";
+    p.textContent = "Point at a tower to read the file.";
+    archFile.append(p);
     return;
   }
+  const h = document.createElement("h4");
+  h.textContent = file.path;
+  const loc = document.createElement("p");
+  loc.className = "loc";
+  loc.textContent = `${file.lines.toLocaleString()} lines · ${file.layer}`;
+  const role = document.createElement("p");
+  role.textContent = ROLES[file.path] || "";
+  archFile.append(h, loc, role);
+}
 
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      e.target.classList.add('visible');
-      io.unobserve(e.target);            // one-shot; stop paying for it after
-    }
-  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+/* ---------------------------------------------------------------- judge etc */
 
-  // Anything at or above the fold is shown immediately and without animation.
-  //
-  // This is not a nicety. IntersectionObserver only reports elements that are
-  // CURRENTLY intersecting, so landing directly on an anchor — /#benchmarks, or
-  // any in-page link — left every element above that point permanently at
-  // opacity 0, with no event ever coming to rescue them. The original page had
-  // the same defect; it was just harder to notice behind a 0.7s fade.
-  const fold = window.innerHeight;
-  for (const el of targets) {
-    if (el.getBoundingClientRect().top < fold) el.classList.add('visible', 'no-anim');
-    else io.observe(el);
+mountJudge({ reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches });
+mountBench();
+mountHistory();
+
+/* ------------------------------------------------------------------ boot */
+
+async function boot() {
+  if (!webgl2Available()) return fallback();
+  try {
+    stage = new Stage($("#gl"));
+  } catch (error) {
+    console.error("Valence: WebGL stage failed", error);
+    return fallback();
   }
-}
-
-/* ── Copy button on the code block ───────────────────────────────────────
- * Was a global function called from an inline onclick. Now delegated, and it
- * reports failure instead of silently doing nothing when the clipboard API is
- * unavailable (it is, on any page not served over a secure origin).
- */
-function setupCopy() {
-  document.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.code-block-copy');
-    if (!btn) return;
-    const body = btn.closest('.tech-code-block')?.querySelector('.code-block-body');
-    if (!body) return;
-
-    const done = (msg) => {
-      btn.textContent = msg;
-      setTimeout(() => { btn.textContent = 'copy'; }, 2000);
-    };
-    try {
-      await navigator.clipboard.writeText(body.innerText);
-      done('copied');
-    } catch {
-      done('copy failed');
+  stage.onContextLost = fallback;
+  const atlas = await glyphAtlas(stage.renderer);
+  document.documentElement.classList.add("gl");
+  views.canyon = createCanyon(stage, atlas, $("[data-view='canyon']"));
+  views.vector = createVectorView(stage, atlas, $("[data-view='vector']"), editor.state);
+  views.vector.sync(editor.state.buffer.lines, editor.state.cursor);
+  views.undo = createUndoView(stage, atlas, $("[data-view='undo']"), editor.state.undo);
+  views.lexer = createLexerView(stage, atlas, $("[data-view='lexer']"));
+  views.lexer.on(({ counts }) => renderLanes(counts));
+  // Run the machine the first time it comes into view, not while off screen.
+  views.lexer.onVisibility = (on) => {
+    if (on && !views.lexer.ran) {
+      views.lexer.ran = true;
+      runLexer();
     }
-  });
+  };
+  views.arch = createArchView(stage, atlas, $("[data-view='arch']"));
+  views.arch.on("hover", showFile);
+  views.arch.on("step", (i) => callpath.forEach((li, j) => li.classList.toggle("on", j === i)));
+  updateBeats();
+
+  const fps = $("#st-fps");
+  setInterval(() => {
+    fps.textContent = `${stage.fps} fps`;
+    chrome.update();
+  }, 500);
+  stage.start();
+  window.__valence = { stage, views, editor };
 }
 
-/* ── Boot ────────────────────────────────────────────────────────────── */
-
-/* ── The buffer scene ────────────────────────────────────────────────────
- * Loaded only when its section is near the viewport. Three.js is ~690KB and
- * the section sits well down the page; paying for it during the initial load
- * would slow the part of the page everyone sees for the sake of a part many
- * people never reach.
- */
-function setupBufferScene() {
-  const section = document.querySelector('#viewport');
-  const canvas = document.querySelector('[data-buffer-canvas]');
-  if (!section || !canvas) return;
-
-  const rangeEl = document.querySelector('[data-vp-range]');
-  const drawnEl = document.querySelector('[data-vp-drawn]');
-  const skipEl = document.querySelector('[data-vp-skipped]');
-  const fmt = (n) => n.toLocaleString('en-US');
-
-  let scene = null;
-  let scrollBound = false;
-
-  const readProgress = () => {
-    const r = section.getBoundingClientRect();
-    const travel = r.height - window.innerHeight;
-    if (travel <= 0) return 0;
-    return Math.min(1, Math.max(0, -r.top / travel));
-  };
-
-  const paintReadout = () => {
-    if (!scene) return;
-    const b = scene.bandInfo;
-    if (rangeEl) rangeEl.textContent = `${fmt(b.first)}–${fmt(b.last)}`;
-    if (drawnEl) drawnEl.textContent = fmt(b.drawn);
-    if (skipEl) skipEl.textContent = fmt(b.total - b.drawn);
-  };
-
-  // rAF-coalesced: scroll fires far more often than the screen refreshes, and
-  // doing work per event rather than per frame is how scroll handlers become
-  // the reason a page stutters.
-  let queued = false;
-  const onScroll = () => {
-    if (queued || !scene) return;
-    queued = true;
-    requestAnimationFrame(() => {
-      queued = false;
-      scene.setProgress(readProgress());
-      paintReadout();
-    });
-  };
-
-  const onPointer = (e) => {
-    if (!scene) return;
-    scene.setPointer(
-      (e.clientX / window.innerWidth) * 2 - 1,
-      (e.clientY / window.innerHeight) * 2 - 1,
-    );
-  };
-
-  const load = async () => {
-    // Under 560px the canvas is too small for the file to read as anything but
-    // texture, and the download is not worth spending someone's data on.
-    //
-    // Marking the section is the important half. Without it the canvas went
-    // away but the 240vh scroll runway stayed, so a phone scrolled through two
-    // full screens of nothing between the copy and the next section — which
-    // looks exactly like the page has broken.
-    if (window.innerWidth < 560) {
-      canvas.remove();
-      section.classList.add('vp-no-scene');
-      return;
-    }
-
-    const narrow = window.innerWidth < 1024;
-    const { createBufferScene } = await import('./buffer-scene.js');
-    scene = createBufferScene(canvas, {
-      maxLines: narrow ? 1400 : Infinity,
-      dprCap: narrow ? 1.5 : 2,
-    });
-    if (!scene) {                              // no WebGL: leave the section as copy
-      canvas.remove();
-      section.classList.add('vp-no-scene');
-      return;
-    }
-
-    scene.setProgress(readProgress());
-    paintReadout();
-
-    if (reduced.matches) { scene.renderStatic(); return; }
-
-    if (!scrollBound) {
-      scrollBound = true;
-      window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('pointermove', onPointer, { passive: true });
-    }
-    scene.start();
-  };
-
-  // Two observers: one to fetch the module ahead of time, one to run the loop
-  // only while the section is actually on screen.
-  const preload = new IntersectionObserver((entries) => {
-    if (!entries[0].isIntersecting) return;
-    preload.disconnect();
-    load().catch((err) => console.warn('[valence] buffer scene failed:', err));
-  }, { rootMargin: '600px 0px' });
-  preload.observe(section);
-
-  // Re-frame on orientation change. The scene keeps its geometry — rebuilding
-  // 112k instances on a rotate would be far worse than the reframe — but the
-  // camera and the section's scroll runway both have to follow.
-  let resizeQueued = false;
-  window.addEventListener('resize', () => {
-    if (resizeQueued) return;
-    resizeQueued = true;
-    requestAnimationFrame(() => {
-      resizeQueued = false;
-      if (!scene) return;
-      scene.resize();
-      scene.setProgress(readProgress());
-      paintReadout();
-      if (!scene._running && !reduced.matches) scene.renderOnce();
-    });
-  }, { passive: true });
-
-  const runner = new IntersectionObserver((entries) => {
-    if (!scene || reduced.matches) return;
-    if (entries[0].isIntersecting) scene.start(); else scene.stop();
-  }, { threshold: 0 });
-  runner.observe(section);
+function fallback() {
+  $(".canyon-fallback").hidden = false;
+  $("#cy-fallback-code").textContent = SOURCE_LINES.slice(0, 80).join("\n");
+  $("#gl").hidden = true;
 }
 
-/* ── Mobile navigation ───────────────────────────────────────────────────
- * Below 900px the link list is a panel rather than a row. One list, one set of
- * hrefs — a second hidden copy for mobile is how the two drift apart.
- */
-function setupNav() {
-  const nav = document.querySelector('nav');
-  const toggle = document.querySelector('.nav-toggle');
-  const menu = document.querySelector('#nav-menu');
-  if (!nav || !toggle || !menu) return;
-
-  const setOpen = (open) => {
-    // The class goes on the list itself rather than on an ancestor: one
-    // element, one state, and no dependence on a parent attribute selector.
-    menu.classList.toggle('is-open', open);
-    nav.dataset.open = open ? 'true' : 'false';
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    toggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
-  };
-  setOpen(false);
-
-  toggle.addEventListener('click', () => {
-    setOpen(nav.dataset.open !== 'true');
-  });
-
-  // Following a link should close the panel — every link here is an in-page
-  // anchor, so without this the menu stays over the section it just jumped to.
-  menu.addEventListener('click', (e) => {
-    if (e.target.closest('a')) setOpen(false);
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && nav.dataset.open === 'true') {
-      setOpen(false);
-      toggle.focus();
-    }
-  });
-
-  // Returning to a desktop width must not leave the panel state stuck on.
-  const wide = window.matchMedia('(min-width: 901px)');
-  wide.addEventListener('change', (e) => { if (e.matches) setOpen(false); });
-}
-
-function boot() {
-  setupNav();
-  buildHeroEditor();
-  setupReveal();
-  setupCopy();
-  setupBufferScene();
-
-  const field = document.querySelector('[data-lex-field]');
-  if (field) mountLexerField(field);
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', boot, { once: true });
-} else {
-  boot();
-}
+boot();

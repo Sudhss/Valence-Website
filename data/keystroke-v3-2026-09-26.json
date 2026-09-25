@@ -1,0 +1,141 @@
+{
+ "recorded": "2026-09-26",
+ "compiler": "g++ 13.1.0 (MinGW-W64) -O2 -std=c++17",
+ "source": "tools/bench/keystroke_v3.cpp",
+ "runs": [
+  {
+   "rows": [
+    {
+     "lines": 100,
+     "typicalUs": 19.6,
+     "worstUs": 22.9
+    },
+    {
+     "lines": 500,
+     "typicalUs": 28.6,
+     "worstUs": 49.1
+    },
+    {
+     "lines": 1000,
+     "typicalUs": 19.2,
+     "worstUs": 52.5
+    },
+    {
+     "lines": 5000,
+     "typicalUs": 51.1,
+     "worstUs": 250.6
+    },
+    {
+     "lines": 10000,
+     "typicalUs": 45.6,
+     "worstUs": 614.8
+    },
+    {
+     "lines": 50000,
+     "typicalUs": 18.6,
+     "worstUs": 3385.6
+    }
+   ]
+  },
+  {
+   "rows": [
+    {
+     "lines": 100,
+     "typicalUs": 20.1,
+     "worstUs": 12.5
+    },
+    {
+     "lines": 500,
+     "typicalUs": 38.7,
+     "worstUs": 29.0
+    },
+    {
+     "lines": 1000,
+     "typicalUs": 23.7,
+     "worstUs": 58.1
+    },
+    {
+     "lines": 5000,
+     "typicalUs": 27.0,
+     "worstUs": 311.6
+    },
+    {
+     "lines": 10000,
+     "typicalUs": 23.8,
+     "worstUs": 526.9
+    },
+    {
+     "lines": 50000,
+     "typicalUs": 18.7,
+     "worstUs": 3569.3
+    }
+   ]
+  },
+  {
+   "rows": [
+    {
+     "lines": 100,
+     "typicalUs": 20.9,
+     "worstUs": 8.1
+    },
+    {
+     "lines": 500,
+     "typicalUs": 22.4,
+     "worstUs": 45.6
+    },
+    {
+     "lines": 1000,
+     "typicalUs": 19.3,
+     "worstUs": 51.4
+    },
+    {
+     "lines": 5000,
+     "typicalUs": 18.6,
+     "worstUs": 339.7
+    },
+    {
+     "lines": 10000,
+     "typicalUs": 31.3,
+     "worstUs": 547.5
+    },
+    {
+     "lines": 50000,
+     "typicalUs": 38.6,
+     "worstUs": 3961.7
+    }
+   ]
+  }
+ ],
+ "median": [
+  {
+   "lines": 100,
+   "typicalUs": 20.1,
+   "worstUs": 12.5
+  },
+  {
+   "lines": 500,
+   "typicalUs": 28.6,
+   "worstUs": 45.6
+  },
+  {
+   "lines": 1000,
+   "typicalUs": 19.3,
+   "worstUs": 52.5
+  },
+  {
+   "lines": 5000,
+   "typicalUs": 27.0,
+   "worstUs": 311.6
+  },
+  {
+   "lines": 10000,
+   "typicalUs": 31.3,
+   "worstUs": 547.5
+  },
+  {
+   "lines": 50000,
+   "typicalUs": 18.7,
+   "worstUs": 3569.3
+  }
+ ]
+}
