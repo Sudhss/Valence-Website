@@ -71,7 +71,10 @@ export function mountBench() {
       fills[k].style.width = pos(us);
       fills[k].classList.toggle("over", us > FRAME_US);
       vals[k].textContent = fmt(us);
-      vals[k].style.left = pos(us);
+      // Near the right edge the value sits inside the bar instead of past it.
+      const at = parseFloat(pos(us));
+      vals[k].style.left = at > 78 ? `calc(${at}% - 86px)` : pos(us);
+      vals[k].classList.toggle("inside", at > 78);
     });
     const lines = n.toLocaleString();
     if (BEFORE[n] > FRAME_US) {

@@ -192,6 +192,39 @@ h3 { font: 700 clamp(22px, 2.2vw, 28px)/1.15 var(--mono); letter-spacing: -0.03e
 .btn kbd { background: rgba(0, 0, 0, 0.18); border-color: rgba(0, 0, 0, 0.12); color: inherit; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
 
+/* The download: the one thing the page most wants you to do, so it is the
+   only accent-filled object in the hero and the largest control on it. */
+.hero-actions { flex-direction: column; align-items: center; gap: 14px; margin-top: 26px; }
+.hero-links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.dl {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: inline-flex; align-items: center; gap: 16px; padding: 12px 26px 12px 12px;
+  border-radius: 10px; text-decoration: none; text-align: left;
+  background: var(--accent); color: var(--on-accent);
+  box-shadow: 0 0 0 1px rgba(92, 240, 186, 0.6), 0 12px 44px rgba(47, 224, 160, 0.32), 0 0 90px rgba(47, 224, 160, 0.18);
+  transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.1, 1), box-shadow 0.18s, background 0.18s;
+}
+.dl:hover { background: var(--accent-hot); transform: translateY(-2px); box-shadow: 0 0 0 1px var(--accent-hot), 0 18px 56px rgba(47, 224, 160, 0.42), 0 0 120px rgba(47, 224, 160, 0.24); }
+.dl:active { transform: translateY(0); }
+.dl-icon {
+  display: grid; place-items: center; width: 46px; height: 46px; border-radius: 8px;
+  background: rgba(8, 14, 12, 0.88); color: var(--accent-hot);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.dl-icon svg { transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.1, 1); }
+.dl:hover .dl-icon svg { transform: translateY(2px); }
+.dl-text { display: flex; flex-direction: column; gap: 3px; }
+.dl-text b { font: 800 19px/1.1 var(--ui); letter-spacing: -0.01em; }
+.dl-text small { font: 500 11.5px/1.2 var(--mono); opacity: 0.72; letter-spacing: 0.01em; }
+/* A slow light sweep across the slab. */
+.dl::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.45) 50%, transparent 65%);
+  transform: translateX(-120%); animation: dl-sweep 5.5s ease-in-out 1.2s infinite;
+}
+@keyframes dl-sweep { 0%, 70% { transform: translateX(-120%); } 88%, 100% { transform: translateX(120%); } }
+@media (prefers-reduced-motion: reduce) { .dl::after { animation: none; } .dl, .dl-icon svg { transition: none; } }
+
 /* ------------------------------------------------------------ canyon */
 
 .canyon { height: 300vh; }
@@ -442,6 +475,7 @@ html:not(.js) .beat { position: static; opacity: 1; transform: none; visibility:
 .brow-worst .bfill { background: var(--syn-number); }
 .brow-typical .bfill { background: var(--accent); box-shadow: 0 0 20px var(--accent-dim); }
 .bfill.over { background: linear-gradient(90deg, var(--syn-type), var(--bad)); }
+.bval.inside { color: var(--base); }
 .bval { position: absolute; top: 50%; transform: translate(10px, -50%); font: 700 13px var(--mono); color: var(--text); white-space: nowrap; transition: left 0.8s cubic-bezier(0.2, 0.7, 0.1, 1); }
 .boverlay { position: absolute; top: 0; bottom: 0; left: 316px; right: 0; pointer-events: none; }
 .bbudget { position: absolute; top: 4px; bottom: -4px; width: 2px; background: var(--text); box-shadow: 0 0 12px rgba(255, 255, 255, 0.35); }
@@ -455,6 +489,8 @@ html:not(.js) .beat { position: static; opacity: 1; transform: none; visibility:
   .brow { grid-template-columns: 1fr; gap: 6px; }
   .baxis { margin-left: 0; }
   .boverlay { left: 0; }
+  .bbudget span { left: auto; right: 8px; top: -18px; }
+  .dl-text b { font-size: 17px; }
 }
 
 /* History */

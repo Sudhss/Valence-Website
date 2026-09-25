@@ -132,9 +132,9 @@ export function createUndoView(stage, atlas, el, undo) {
       const tallest = Math.min(SHOW, Math.max(undo.undoStack.length, undo.redoStack.length, 3));
       const top = tallest * (SLAB_H + GAP) + 1.2;
       const tanHalf = Math.tan((camera.fov * Math.PI) / 360);
-      const dist = Math.max((top / 2 + 0.6) / tanHalf, 5.6 / (tanHalf * camera.aspect)) * 1.02;
-      camera.position.set(0, top * 0.55 + 1.6, dist);
-      camera.lookAt(0, top * 0.45, 0);
+      const dist = Math.max((top / 2 + 1.1) / tanHalf, 5.6 / (tanHalf * camera.aspect)) * 1.04;
+      camera.position.set(0, top * 0.5 + 2.2, dist);
+      camera.lookAt(0, top * 0.36, 0);
     },
   };
   layout();
