@@ -171,6 +171,21 @@ mountJudge({ reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matc
 mountBench();
 mountHistory();
 
+/* ------------------------------------------------ downloads on a phone */
+
+// A Windows installer is no use on a phone; say so, and let them have it anyway.
+const isHandheld = () => window.matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
+const mobileDialog = $("#mobile-dl");
+$$('a[href$="Valence_V3_Setup.exe"]').forEach((a) => {
+  if (a.id === "mdl-anyway") return;
+  a.addEventListener("click", (e) => {
+    if (!isHandheld() || !mobileDialog?.showModal) return;
+    e.preventDefault();
+    mobileDialog.showModal();
+  });
+});
+$("#mdl-anyway")?.addEventListener("click", () => mobileDialog.close());
+
 /* ------------------------------------------------------------------ boot */
 
 async function boot() {

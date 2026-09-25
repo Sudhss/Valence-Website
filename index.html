@@ -70,7 +70,7 @@
         <div class="actions hero-actions">
           <a class="dl" href="https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe">
             <span class="dl-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 20h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-            <span class="dl-text"><b>Download for Windows</b><small>Valence_V3_Setup.exe &middot; v3.0 &middot; Windows 10 &amp; 11, x64</small></span>
+            <span class="dl-text"><b>Download for Windows</b></span>
           </a>
           <div class="hero-links">
             <a class="btn btn-small" href="https://github.com/Sudhss/Valence" target="_blank" rel="noopener">Read the source</a>
@@ -271,5 +271,19 @@
     <p class="credit">Built by <a href="https://github.com/Sudhss" target="_blank" rel="noopener">Sudhanshu Shukla</a>.</p>
   </section>
 </main>
+
+<!-- Shown instead of a download on phones and tablets. -->
+<dialog class="verdict-dialog" id="mobile-dl" aria-labelledby="mdl-title">
+  <form method="dialog">
+    <p class="mdl-badge"><span class="verdict WA">WA</span> wrong answer: wrong device</p>
+    <h3 id="mdl-title">That's a desktop editor.</h3>
+    <p>Valence is a native Windows app. Your phone will download it, stare at it, and do absolutely nothing with it. We'd send you to your PC, but who are we to judge?</p>
+    <p class="fine">(We are exactly who. Judging is the headline feature of V3.)</p>
+    <div class="mdl-actions">
+      <button class="btn btn-accent btn-small" value="later" autofocus>Fine, later on my PC</button>
+      <a class="btn btn-small btn-quiet" id="mdl-anyway" href="https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe">Download anyway</a>
+    </div>
+  </form>
+</dialog>
 </body>
 </html>

@@ -300,9 +300,12 @@ export function createCanyon(stage, atlas, el) {
       const f = view.cam.fold;
       const z = -line * LH;
       const tanHalf = Math.tan((camera.fov * Math.PI) / 360);
-      const heroDist = Math.max(62, (WORD_W / 2 + 6) / (tanHalf * camera.aspect));
-      const heroPos = new THREE.Vector3(0, WORD_Y - 3, WORD_Z + heroDist);
-      const heroLook = new THREE.Vector3(0, WORD_Y - 3, WORD_Z);
+      const heroDist = Math.max(62, (WORD_W / 2 + 2) / (tanHalf * camera.aspect));
+      // Aim below the name so it sits in the upper part of the frame, clear
+      // of the hero text anchored to the bottom.
+      const lift = 2 * heroDist * tanHalf * (camera.aspect < 1 ? 0.3 : 0.25);
+      const heroPos = new THREE.Vector3(0, WORD_Y - lift, WORD_Z + heroDist);
+      const heroLook = new THREE.Vector3(0, WORD_Y - lift, WORD_Z);
       const flyPos = new THREE.Vector3(0.5, 6.2, z + 9);
       const flyLook = new THREE.Vector3(0, 0, z - 30);
       const bandFold = foldedPosition(line + 3 + BAND / 2);
