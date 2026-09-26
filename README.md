@@ -1,6 +1,7 @@
 <div align="center">
 
 <img src="readme/header.svg" alt="Valence typing its own cppmain snippet: the popup offers it, it expands, and the caret types // Write code at the speed of thought." width="100%">
+Ah yes i need to fix that
 
 # Valence — the website
 
@@ -10,7 +11,6 @@
 &nbsp;[**Live site**](https://valence-website.vercel.app) · [Download V3](https://github.com/Sudhss/Valence/releases/download/v3.0/Valence_V3_Setup.exe) · [Editor source](https://github.com/Sudhss/Valence)
 
 </div>
-Ah yes i need to fix that
 ---
 
 Most landing pages describe the product. This one **runs pieces of it**. The tokenizer, the undo manager, the judge's verdict rule and the editing behaviour are ported from Valence's C++ into JavaScript. The first three are tested against the output of the real C++, compiled and run on all 6,586 lines of Valence's own source; if one of them drifts, the badge above goes red.
