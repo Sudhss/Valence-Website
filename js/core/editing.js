@@ -2,7 +2,7 @@
  *
  * handleChar (auto-close pairs, step over closers, re-indent a typed '}'),
  * handleBackspace (delete an empty auto-inserted pair as one), handleEnter
- * (carry indentation, open a block between braces), handleTab (four spaces,
+ * (carry indentation, open a block between braces), handleTab (spaces to the next tab stop,
  * block indent), the cppmain snippet, and undo/redo applied to the buffer
  * exactly as performUndo/performRedo do.
  *
@@ -125,11 +125,27 @@ export class EditorState {
     const nextCh = this.cursor.col < line.length ? line[this.cursor.col] : "";
     const prevCh = this.cursor.col > 0 ? line[this.cursor.col - 1] : "";
 
-    // Typing a closer that is already under the caret steps over it.
-    if (isCloser(ch) && nextCh === ch) {
+    // Typing a closer that is already under the caret steps over it, unless
+    // it follows a backslash, where it is an escape like \".
+    if (isCloser(ch) && nextCh === ch && prevCh !== "\\") {
       this.cursor.col += 1;
       this._changed({ kind: "move", op: "stepOver" });
       return;
+    }
+
+    // Which quote, if any, is still open left of the caret. A quote that closes
+    // a string, or one typed inside the other kind of string, gets no partner;
+    // otherwise deleting half of "" and retyping it gives """.
+    let openQuote = "";
+    if (ch === '"' || ch === "'") {
+      for (let i = 0; i < this.cursor.col; i += 1) {
+        const c = line[i];
+        if (openQuote) {
+          if (c === "\\") i += 1;
+          else if (c === openQuote) openQuote = "";
+        } else if (c === '"' || c === "'") openQuote = c;
+        else if (c === "/" && line[i + 1] === "/" && i + 1 < this.cursor.col) break;
+      }
     }
 
     if (ch === "}") this.undo.beginCompound();
@@ -145,7 +161,7 @@ export class EditorState {
       this.undo.endCompound();
     } else {
       const closing = closerFor(ch);
-      const suppress = isIdentLike(nextCh) || ((ch === '"' || ch === "'") && isIdentLike(prevCh));
+      const suppress = isIdentLike(nextCh) || ((ch === '"' || ch === "'") && (isIdentLike(prevCh) || openQuote !== ""));
       if (closing && !suppress) {
         b.insertChar(this.cursor.row, this.cursor.col, closing);
         this.undo.recordInsert({ ...this.cursor }, closing);
@@ -185,6 +201,20 @@ export class EditorState {
         b.deleteRange(start, end);
         this.cursor.col -= 1;
         this._changed({ kind: "edit", op: "deletePair", cost: b.lastCost, undo: rec });
+        return;
+      }
+      // Tab pads to the next tab stop, so Backspace in a run of spaces goes
+      // back to the previous one. Decided from the text, so it survives paste,
+      // reload and undo. A tab character earlier on the line disables it.
+      const prevStop = Math.floor((col - 1) / INDENT_WIDTH) * INDENT_WIDTH;
+      const tabBefore = l.slice(0, col).includes("\t");
+      if (left === " " && !tabBefore && col - prevStop > 1 && /^ +$/.test(l.slice(prevStop, col))) {
+        const start = { row, col: prevStop };
+        const rec = this.undo.recordDelete(start, b.getText(start, this.cursor));
+        this.undo.forceNewGroup();
+        b.deleteRange(start, this.cursor);
+        this.cursor.col = prevStop;
+        this._changed({ kind: "edit", op: "deleteRange", cost: b.lastCost, undo: rec });
         return;
       }
       const rec = this.undo.recordDelete({ row, col: col - 1 }, left);
@@ -271,10 +301,13 @@ export class EditorState {
       return;
     }
     const at = { ...this.cursor };
-    const spaces = " ".repeat(INDENT_WIDTH);
+    // Pad to the next tab stop, not a flat 4, so Backspace can take it back.
+    const tabBefore = this.buffer.line(at.row).slice(0, at.col).includes("\t");
+    const width = tabBefore ? INDENT_WIDTH : INDENT_WIDTH - (at.col % INDENT_WIDTH);
+    const spaces = " ".repeat(width);
     this.buffer.insertText(at.row, at.col, spaces);
     const cost = this.buffer.lastCost;
-    this.cursor.col += INDENT_WIDTH;
+    this.cursor.col += width;
     const rec = this.undo.recordInsert(at, spaces);
     this.undo.forceNewGroup();
     this._changed({ kind: "edit", op: "insertText", at, cost, undo: rec });
