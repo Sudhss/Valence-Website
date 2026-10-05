@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Valence landing page. Static: no build step. The tokenizer, undo manager and judge comparator are ports of Valence's C++, tested against it.",
   "scripts": {
-    "test": "node --test \"tests/*.test.mjs\"",
+    "test": "node --test tests/ports.test.mjs",
     "golden": "python tools/golden/make_golden.py",
     "serve": "python -m http.server 5600"
   },
